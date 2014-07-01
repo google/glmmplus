@@ -1,0 +1,141 @@
+\documentclass[article]{jss}
+
+%% need no \usepackage{Sweave.sty}
+
+\author{Ben Ogorek\\People Analytics, Google \And
+Second Author\\Google}
+
+\Plainauthor{Ben Ogorek, Second Author}
+
+\title{\pkg{glmmplus}: Mixed Effects Modeling for a Complex World}
+
+\Plaintitle{Mixed Effects Modeling with the \pkg{glmmplus} Package}
+
+\Shorttitle{\pkg{glmmplus}: Real world mixed effects modeling}
+
+\Abstract{
+ We introduce the \pkg{glmmplus} package, ...
+}
+
+\Keywords{missing data, random effects, mixed model}
+
+\Address{
+Ben Ogorek\\
+People Analytics\\
+Google\\
+E-mail: \email{baogorek@google.com}\\
+}
+
+\begin{document}
+
+\section{Introduction}
+
+The key premise motivating \pkg{glmmplus} is that the growing size and
+complexity of
+real-world problems demands \textit{a la carte} availiability of analysis
+strategies. These include
+\begin{enumerate}
+\item Missing data forgiveness,
+\item Random effects,
+\item Model Selection,
+\item Grouped terms (categorical factors, spline basis functions),
+\item Influence, outlier, and collinearity diagnostics.
+\end{enumerate}
+
+Despite the thousands of
+freely available packages for \proglang{R} and the high likelihood that at least
+one package exists that addresses a given concern, there are gaps.
+TODO: explain. Maybe pull out the emails to Tim H. talking about limitations
+of lasso and reasons for the package.
+
+
+For instance, \pkg{glmmplus} builds heavily on the \pkg{mice} package
+\citep{mice} for missing data related functions. For an analyst to benefit from
+\pkg{mice}, however, a decision must have been made that missing data was the
+\textit{chief feature} of the problem at hand. A search would be conducted to
+find the package. New functions would have to be learned, and the analyst
+would have to give up \proglang{R}'s fundamental data structure, the
+\code{data.frame}, in favor of the \textit{multiply imputed data set}
+(or \code{mids} object)
+of \pkg{mice}. Standard model selection techniques such as forward
+selection are no longer available, and even the testing of individual nested
+hypotheses breaks (TODO: make sure of this, record the version)
+down for linear mixed models from the \pkg{lme4} package
+\citep{lme4}.
+
+TODO: Discuss big company product visions. \proglang{SAS}
+
+\section{A demonstration}
+
+Included with the \pkg{glmmplus} package is a small test data set called
+\code{testdata}. After installing, load the package and \code{testdata} into
+memory.
+
+<<foo>>=
+library(glmmplus)
+data(testdata)
+head(testdata)
+@
+
+This data set was generated randomly, with \code{y} or \code{y.binary} meant
+to be the response variables, \code{x}, \code{w}, and \code{z} as continuous
+predictors, and \code{factor.1} and \code{factor.2} as either categorical predictors.
+or the subject identifier corresponding to a random effect. The variable \code{x} has
+a sinusoidal (nonlinear) relationship to both responses (in the log odds scale for 
+\code{y.binary}), the variable \code{w} as a linear relationship with the responses, 
+and the variable \code{z} is unimportant.
+
+After creation of \code{testdata}, a quarter of the values for both \code{z} and 
+\code{x} were replaced with \code{NA}, leading to a missing data situation that 
+would require the deletion of a substantial number of rows if sent to a regression
+procedure without preprocessing.
+
+Before addressing the missingness, I introduce the flagship object created by
+\pkg{glmmplus} model fitting functions, the \textit{generalized fitted object} (gfo).
+Below, FitModel is simply invoking ordinary least squares (OLS) regression model via 
+\code{glm} with \code{family = gaussian}, though the 
+default print method is different.
+<<foo2>>=
+gfo <- FitModel(y ~ x + w + z, data = testdata)
+gfo
+@
+The summary function of gfo also produces a different style of output.
+<<foo3>>=
+summary(gfo)
+@
+
+To understand the point of \code{FitModel}, a diversion into multiple imputation is 
+helpful.
+The \pkg{glmmplus} function \code{ImputeData} is a wrapper around the 
+self-titled function from the 
+\pkg{mice} package, except with different defaults and added functionality around
+  excluding predictors that would unacceptibly slow down the imputation.
+The categorical \code{factor.2} has 30 levels leading to an imputation model with 
+many parameters. If this is not desireable, or if inclusion of such a factor is
+slowing down the imputation procedure, simply include the factor in \code{ImputeData}'s
+textit{droplist}.
+<<foo4>>=
+mids <- ImputeData(testdata, m = 5, maxit = 5, droplist = c("factor.2"))
+@
+There are multiple data sets packaged in this mids object.
+<<foo5>>=
+head(complete(mids, 1))
+head(complete(mids, 2))
+@
+However, it is recognized as a data argument my FitModel.
+<<foo6>>=
+gfo <- FitModel(y ~ x + w + z, data = mids)
+summary(gfo)
+@
+Forward and Backward sequential model selection are also supported with minimal
+changes in syntax:
+<<foo7>>=
+gfo.forward <- ForwardSelect(y ~ x + w + z, data = mids, cutoff = .10)
+gfo.forward
+gfo.backward <- BackwardEliminate(y ~ x + w + z, data = mids, cutoff = .05)
+gfo.backward
+@
+
+More coming soon.
+\bibliography{references}
+\end{document}

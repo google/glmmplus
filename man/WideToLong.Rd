@@ -1,0 +1,59 @@
+\name{WideToLong}
+\alias{WideToLong}
+\alias{wideToLong}
+\alias{wide.to.long}
+\alias{widetolong}
+
+\title{WideToLong: Converting from wide to long formats}
+\description{In longitudinal or other multiple response studies, data presented in a long format 
+will often feature dependence between rows. While this is the preferred format for lme4, such a
+format would hide important information from multiple imputation models and make the MAR assumption
+less plausible. Hense, the suggestion is to impute data in a wide format, where rows are again independent,
+and then return the mids object to a long format for use with FitModel, ForwardSelect, or BackwardEliminate.}
+
+\usage{
+WideToLong(data, id.name, response.base, time.varying.bases = c(""), sep = ".")
+}
+
+\arguments{
+  \item{data}{
+	  A data frame or mids object in "wide" format. Specifically, both the response and any time varying covariates
+    should be specified as multiple columns with the same base name, but a different suffix. The suffix values will 
+    be the future period labels.  
+  }
+  \item{id.name}{
+	  The name of the identifying variable, a character string.  
+  }
+  \item{response}{
+   The common prefix for the response variable, a character string.
+  }
+  \item{time.varying.bases}{
+    A character vector of name prefixes for time-varying covariates.
+  }
+  \item{sep}{
+   The character delimiter separating the variable name base from the period identifier.
+   }
+}
+
+
+\examples{
+wide.df <- data.frame(pid           = 1:100,
+                      my.response.1 = rnorm(100),
+                      my.response.2 = rnorm(100),
+                      x.1           = rnorm(100),
+                      x.2           = rnorm(100))
+# add missingness
+
+wide.df[25:50, "my.response.2"] <- NA
+wide.df[45:55, "x.1"] <- NA
+
+wide.mids <- ImputeData(wide.df, droplist = c("pid"))
+long.mids <- WideToLong(wide.mids, "pid", "my.response", c("x"), sep = ".")
+
+my.model <- FitModel(my.response ~ (1 | pid) + x, data = long.mids)
+summary(my.model)
+}
+\references{
+	 Stef van Buuren, Karin Groothuis-Oudshoorn (2011). mice: Multivariate Imputation by Chained Equations in R. Journal of Statistical Software, 45(3), 1-67. URL
+	   http://www.jstatsoft.org/v45/i03/.
+}

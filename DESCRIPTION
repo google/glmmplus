@@ -1,0 +1,11 @@
+Package: glmmplus
+Date: 2014-03-25
+Title: Multiple Imputation and Model Selection
+Version: 0.10  
+Author: Ben Ogorek <baogorek@google.com>,
+        Caitlin Hogan <caitlinh@google.com>,
+        Andy Chen <anchen@google.com>
+Maintainer: Ben Ogorek <baogorek@google.com>
+Description: Model selection tools for generalized linear (mixed) models
+             with accomidations for missing data.
+
