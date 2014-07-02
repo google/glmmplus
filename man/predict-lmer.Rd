@@ -9,16 +9,13 @@ predict(obj, newdata)
 }
 
 \arguments{
-  \item{obj}{
-       An lmer object.
-  }
-  \item{newdata} {either a data frame or a mids object from the mice package}
+  \item{obj}{An lmer object.}
+  \item{newdata}{either a data frame or a mids object from the mice package}
 }
 \details{
 The procedure works like this...
 }
 \examples{
-
   model <- lmer(Reaction ~ Days + (Days|Subject), sleepstudy)
   preds <- predict(model, se.fit = TRUE, newdata = sleepstudy)
   plot(preds, plot.smean = TRUE, main = "Gaussian GLMM predictions")

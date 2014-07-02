@@ -14,8 +14,8 @@ CrossValidate(gfo, k.folds = 5, granularity = .005)
   \item{gfo}{
 	  A gfo object from BackwardEliminate, ForwardSelect, or FitModel. 
   }
-  \item{k.folds} { Number of cross validation splits }
-  \item{granularity} { For binary case, how much to increment the threshold by}
+  \item{k.folds}{Number of cross validation splits}
+  \item{granularity}{ For binary case, how much to increment the threshold by}
 }
 \details{
 The procedure works like this...

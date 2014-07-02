@@ -4,7 +4,7 @@
 \alias{SplineString}
 \alias{SplineStr}
 \alias{MakeSpline}
-\title{spline helper function
+\title{spline helper function}
 \description{ This is  ...}
 
 \usage{
@@ -12,13 +12,10 @@ MakeSplineStr(var.name, data, interior.knots)
 }
 
 \arguments{
-  \item{var.name}{
-	  A variable name (character string) 
-  }
-  \item{data} { a data frame }
-  \item{interior.knots} { a numeric vector containing the interior knots of a 
-	  parametric spline
-  }
+  \item{var.name}{A variable name (character string)}
+  \item{data}{a data frame}
+  \item{interior.knots}{a numeric vector containing the interior knots of a 
+	  parametric spline}
 }
 \details{
 The procedure works like this...

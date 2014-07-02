@@ -19,6 +19,3 @@ S3method(predict, gfo)
 S3method(`[`, mids)
 S3method(WideToLong, mids)
 S3method(WideToLong, data.frame)
-
-S3method(predict, mer)
-S3method(plot, predict.mer)
