@@ -100,6 +100,7 @@ TestSequentialEdgeCases <- function() {
   glm.complete <- ForwardSelect(y ~ x + w, missing.df)
   checkEquals(sort(names(glm.complete$qbar[-1])), c("w", "x"))
   rm(glm.complete)
+
   lmer.complete <- BackwardEliminate(y ~ (1 | factor.1) + x + w, missing.df)
   checkEquals(sort(names(lmer.complete$qbar[-1])), c("w", "x"))
   rm(lmer.complete)

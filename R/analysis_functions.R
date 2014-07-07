@@ -14,7 +14,7 @@
 
 coef2 <- function(object, ...) UseMethod('coef2', object)
 coef2.glm <- function(object, ...) coef(object)
-coef2.mer <- function(object, ...) {
+coef2.merMod <- function(object, ...) {
   # An S3 mer function resembling meant to resemble glm's coef
   #
   # Args:
@@ -26,21 +26,21 @@ coef2.mer <- function(object, ...) {
   return(val)
 }
 
-
 vcov2 <- function(object, ...) UseMethod('vcov2', object)
 vcov2.glm <- function(object, ...) vcov(object)
-vcov2.mer <- function(object, ...) {
+vcov2.merMod <- function(object, ...) {
   # Overwriting mer variance function to match glm's format
   #
   # Args:
   #  obj: a mer object
   #
   #  Returns: The variance matrix as a native matrix object
-  rr <- as(lme4:::sigma(object)^2 *
-           chol2inv(object@RX, size = object@dims['p']), "dpoMatrix")
-  nms <- colnames(object@X)
-  dimnames(rr) <- list(nms, nms)
-  rr@factors$correlation <- as(rr, "corMatrix")
+#  rr <- as(lme4:::sigma(object)^2 *
+#           chol2inv(object@RX, size = object@dims['p']), "dpoMatrix")
+#  nms <- colnames(object@X)
+#  dimnames(rr) <- list(nms, nms)
+#  rr@factors$correlation <- as(rr, "corMatrix")
+  rr <- vcov.merMod(object)
   var.mat <- try(as.matrix(rr))
   if (class(var.mat) == "matrix") {  # i.e., no errors
     rownames(var.mat) <- names(fixef(object))
@@ -270,7 +270,8 @@ GetEstimates.data.frame <- function(data, formula, family, null.model,
   if (length(random.terms) == 0) {
     model.fit <- glm(formula, family, data)
   } else {
-    model.fit <- lmer(formula, data, family)
+    library(lme4)
+    model.fit <- glmer(formula = formula, data = data, family = family)
   }
   quantities <- try(CollectModelQuantities(model.fit, data, null.model))
   analysis.list <- list()
@@ -310,7 +311,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   } else {
     library(lme4)
     analysis.list <- mclapply(c(1:m),
-                              function(i) lmer(formula,
+                              function(i) glmer(formula,
                                                data = complete(mids, i),
                                                family = family),
                               mc.preschedule = FALSE, mc.cores = 5)

@@ -179,6 +179,7 @@ MakeSplineStr <- function(var.name, data, interior.knots) {
   #  var.name: the variable name of the independent variable
   #  data: a data.frame
   #  interior.knots: a numeric vector of parametric spline knots
+  library(splines)
   str.1 <- paste0("ns(", var.name, ", knots = c(")
   str.2 <- paste(interior.knots, collapse = ", ")
   str.3 <- "), Boundary.knots = c("
