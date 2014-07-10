@@ -268,10 +268,16 @@ GetEstimates.data.frame <- function(data, formula, family, null.model,
   #
   #  Returns: a gfo S3 object
   if (length(random.terms) == 0) {
-    model.fit <- glm(formula, family, data)
+    library(splines)
+    model.fit <- glm(formula = formula, family = family(), data = data)
   } else {
     library(lme4)
-    model.fit <- glmer(formula = formula, data = data, family = family)
+    library(splines)
+    if (family()$family == "gaussian") {
+      model.fit <- lmer(formula = formula, data = data)
+    } else {
+      model.fit <- glmer(formula = formula, data = data, family = family)
+    }
   }
   quantities <- try(CollectModelQuantities(model.fit, data, null.model))
   analysis.list <- list()
@@ -302,20 +308,28 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   #
   #  Returns: a gfo S3 object
   m <- mids$m
-  library(multicore)
+  library(parallel)
+  cl <- makeCluster(getOption("cl.cores", 5))
+    
   if (length(random.terms) == 0) {
-    analysis.list <- mclapply(c(1:m),
-                              function(i) glm(formula, data = complete(mids, i),
-                                              family = family),
-                              mc.preschedule = TRUE, mc.cores = 5)
+    analysis.list <- clusterApply(cl, c(1:m),
+                              function(i){library(splines)
+                                          glm(formula, data = complete(mids, i),
+                                              family = family)})
   } else {
     library(lme4)
-    analysis.list <- mclapply(c(1:m),
-                              function(i) glmer(formula,
-                                               data = complete(mids, i),
-                                               family = family),
-                              mc.preschedule = FALSE, mc.cores = 5)
-  }
+    analysis.list <- clusterApply(cl, c(1:m),
+                              function(i){library(lme4)
+                                          library(splines)
+                                          if(family()$family == "gaussian"){
+                                              return(lmer(formula = formula, data = complete(mids, i)))
+                                          } else {
+                                            return(glmer(formula = formula,
+                                                data = complete(mids, i),
+                                                family = family))
+                                          }})
+  } 
+  stopCluster(cl)
   mat.list <- list()
   coef.list <- list()
   mcfaddens.list <- list()

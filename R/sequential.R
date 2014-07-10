@@ -86,6 +86,7 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
   #  type: either "forward" or "backward"
   #
   # Returns: a gfo model object
+  library(splines)
   all.terms <- attributes(terms(formula))$term.labels
   fixed.terms <- all.terms[!grepl("\\|", all.terms)]
   random.terms <- all.terms[grepl("\\|", all.terms)]
