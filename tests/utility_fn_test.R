@@ -118,17 +118,22 @@ TestCreateFormula <- function() {
   checkEquals(form, formula("y ~ (1 | w) + x + z"))
 }
 
-TestWideToLongDf <- function() {
+TestReshaping <- function() {
   y <- rnorm(4)
   x.t <- rnorm(4) # time varying covariate
   z <- c(3, 2)
   wide.df <- data.frame(p.id = c(1, 2), y.1 = y[c(1, 3)], y.2 = y[c(2, 4)],
                         x.t.1 = x.t[c(1, 3)], x.t.2 = x.t[c(2, 4)], z = z)
   
-  long.df <- data.frame(p.id = c(1, 1, 2, 2), period = c(1, 2, 1, 2), y = y, x.t = x.t,
-                        z = c(z[1], z[1], z[2], z[2]))
+  long.df <- data.frame(p.id = c(1, 1, 2, 2), period = c(1, 2, 1, 2), y = y,
+                        x.t = x.t, z = c(z[1], z[1], z[2], z[2]))
 
   test.long <- WideToLong(wide.df, "p.id", "y", time.varying.bases = c("x.t"))
   checkTrue(all(test.long == long.df))
+
+  test.wide <- LongToWide(long.df, "p.id", "period",
+                          time.varying.vars = c("y", "x.t"), sep = ".")
+  checkTrue(all(test.wide[, order(names(test.wide))] ==
+                wide.df[, order(names(wide.df))]))
 }
 

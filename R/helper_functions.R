@@ -236,10 +236,24 @@ WideToLong.data.frame <- function(data, id.name, response.base,
       wide[, name] <- NULL
     }
   }
-
-  #static.expanded <- merge(wide, data.frame(period = period.names))
-
   long.df <- merge(long, wide)
   return (long.df)
+}
+
+LongToWide.data.frame <- function(data, id.name, period.name,
+                                  time.varying.vars, sep = ".") {
+  time.stable.df <- unique(data[, setdiff(names(data), time.varying.vars)])
+  period.names <- unique(data[, period.name])
+  wide.names <- c(id.name)
+  wide.df.list <- list()
+  for (var in time.varying.vars) {
+    for (period in period.names) {
+      wide.df.list[[var]] <- cbind(wide.df.list[[var]],
+                                   data[data[, period.name] == period, var])
+    }
+      colnames(wide.df.list[[var]]) <- paste(var, period.names, sep = sep)
+  }
+  wide.df <- as.data.frame(Reduce(cbind, wide.df.list))
+  return(wide.df)
 }
 
