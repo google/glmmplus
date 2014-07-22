@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-WideToLong <- function(object, ...) UseMethod('WideToLong', object)
-
 # Removes leading and trailing white space
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
@@ -207,6 +205,7 @@ CreateFormula <- function(response, predictors, random.terms = character(0)) {
   return(formula(formula.str))
 }
 
+WideToLong <- function(object, ...) UseMethod('WideToLong', object)
 WideToLong.data.frame <- function(data, id.name, response.base,
                                   time.varying.bases, sep = ".") {
 
@@ -240,20 +239,29 @@ WideToLong.data.frame <- function(data, id.name, response.base,
   return (long.df)
 }
 
+LongToWide <- function(object, ...) UseMethod('LongToWide', object)
 LongToWide.data.frame <- function(data, id.name, period.name,
                                   time.varying.vars, sep = ".") {
-  time.stable.df <- unique(data[, setdiff(names(data), time.varying.vars)])
+  # Sort data by id, period
+  data <- data[order(data[, id.name], data[, period.name]), ]
+  stable.vars <- setdiff(names(data), c(period.name, time.varying.vars))
+  if (length(stable.vars) == 1) {
+    time.stable.df <- data.frame(unique(data[, id.name]))
+    names(time.stable.df) <- id.name
+  } else {
+    time.stable.df <- unique(data[, stable.vars])
+  }
   period.names <- unique(data[, period.name])
-  wide.names <- c(id.name)
-  wide.df.list <- list()
+  wide.df <- time.stable.df
   for (var in time.varying.vars) {
     for (period in period.names) {
-      wide.df.list[[var]] <- cbind(wide.df.list[[var]],
-                                   data[data[, period.name] == period, var])
+     period.df <- data[data[, period.name] == period, c(id.name, var)]
+     names(period.df) <-  c(id.name, paste(var, period, sep = sep))
+     wide.df <- merge(wide.df, period.df, by = id.name, all.x = TRUE)
+     cat("var = ", var, ", period = ", period, ", nrow period = ",
+         nrow(period.df), "nrow wide.df = ", nrow(wide.df), "\n")
     }
-      colnames(wide.df.list[[var]]) <- paste(var, period.names, sep = sep)
   }
-  wide.df <- as.data.frame(Reduce(cbind, wide.df.list))
   return(wide.df)
 }
 

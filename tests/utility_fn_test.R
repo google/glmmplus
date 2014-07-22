@@ -131,8 +131,7 @@ TestReshaping <- function() {
   test.long <- WideToLong(wide.df, "p.id", "y", time.varying.bases = c("x.t"))
   checkTrue(all(test.long == long.df))
 
-  test.wide <- LongToWide(long.df, "p.id", "period",
-                          time.varying.vars = c("y", "x.t"), sep = ".")
+  test.wide <- LongToWide(long.df, "p.id", "period", c("y", "x.t"), sep = ".")
   checkTrue(all(test.wide[, order(names(test.wide))] ==
                 wide.df[, order(names(wide.df))]))
 }
