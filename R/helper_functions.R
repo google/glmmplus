@@ -207,7 +207,7 @@ CreateFormula <- function(response, predictors, random.terms = character(0)) {
 
 WideToLong <- function(object, ...) UseMethod('WideToLong', object)
 WideToLong.data.frame <- function(data, id.name, response.base,
-                                  time.varying.bases, sep = ".") {
+                                  time.varying.bases = NULL, sep = ".") {
 
   response.regex <- paste0("^", gsub("\\.", "\\\\.",
                            paste0(response.base, sep)), "(.*)$")

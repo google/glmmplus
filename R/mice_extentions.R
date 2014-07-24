@@ -27,9 +27,9 @@ ImputeData <- function(data, m = 10, maxit = 15, droplist = NULL) {
   return(mids.out)
 }
 
+WideToLong <- function(object, ...) UseMethod('WideToLong', object)
 WideToLong.mids <- function(wide.mids, id.name, response.base,
-                            time.varying.bases = c(""), sep = ".") {
-
+                            time.varying.bases = NULL, sep = ".") {
 
   new.data <- WideToLong(wide.mids$data, id.name, response.base,
                          time.varying.bases, sep)

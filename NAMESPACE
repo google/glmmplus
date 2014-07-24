@@ -13,6 +13,8 @@ export(GetRelatedVars)
 export(GetVariableGroupImpact)
 export(ReformatNames)
 
+importFrom(mice, complete)
+
 S3method(print, gfo)
 S3method(summary, gfo)
 S3method(coef, gfo)
