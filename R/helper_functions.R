@@ -64,10 +64,11 @@ GetCoefNames <- function(var, complete.df) {
   obj <- with(complete.df, eval(parse(text = var)))
   if (grepl("\\(", var) && !is.null(dim(obj))) {  # e.g., an ns() spline fn
     test.coefs <- paste0(var, 1:ncol(obj))
+  #else if ((is.factor(obj) | is.character(obj)) && length(levels(factor(obj)) 
   } else {
       test.coefs <- var
     if (is.factor(obj)) {
-      test.coefs <- paste0(var, colnames(contrasts(obj)))
+      test.coefs <- paste0(var, colnames(contrasts(factor(obj))))
     }
     else if (is.character(obj)) {
       test.coefs <- paste0(var, levels(factor(obj))[-1])

@@ -309,27 +309,31 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   #  Returns: a gfo S3 object
   m <- mids$m
   library(parallel)
-  cl <- makeCluster(getOption("cl.cores", 5))
     
   if (length(random.terms) == 0) {
-    analysis.list <- clusterApply(cl, c(1:m),
-                              function(i){library(splines)
-                                          glm(formula, data = complete(mids, i),
-                                              family = family)})
+    analysis.list <- mclapply(c(1:m),
+                              function(i){
+                                library(splines)
+                                glm(formula, data = complete(mids, i),
+                                    family = family)},
+                              mc.cores = 5)
   } else {
     library(lme4)
-    analysis.list <- clusterApply(cl, c(1:m),
-                              function(i){library(lme4)
-                                          library(splines)
-                                          if(family()$family == "gaussian"){
-                                              return(lmer(formula = formula, data = complete(mids, i)))
-                                          } else {
-                                            return(glmer(formula = formula,
+    cl <- makeCluster(getOption("cl.cores", 5))
+    analysis.list <- parLapply(cl, c(1:m),
+                               function(i){
+                                 library(lme4)
+                                 library(splines)
+                                 if(family()$family == "gaussian") {
+                                   return(lmer(formula = formula,
+                                               data = complete(mids, i)))
+                                 } else {
+                                   return(glmer(formula = formula,
                                                 data = complete(mids, i),
                                                 family = family))
-                                          }})
-  } 
+                                }})
   stopCluster(cl)
+  }
   mat.list <- list()
   coef.list <- list()
   mcfaddens.list <- list()
