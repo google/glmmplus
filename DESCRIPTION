@@ -5,7 +5,7 @@ Version: 0.90
 Author: Ben Ogorek <baogorek@google.com>,
         Caitlin Hogan <caitlinh@google.com>,
 Maintainer: Ben Ogorek <baogorek@google.com>
-Imports: splines, lme4, mice, mvtnorm
+Imports: splines, lme4, mice, mvtnorm, nlme
 Suggests: Runit
 Description: Model selection tools for generalized linear (mixed) models
              with accomidations for missing data.

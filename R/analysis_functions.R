@@ -16,18 +16,17 @@ coef2 <- function(object, ...) UseMethod('coef2', object)
 coef2.glm <- function(object, ...) coef(object)
 coef2.merMod <- function(object, ...) {
   # An S3 mer function resembling meant to resemble glm's coef
-  #
-  # Args:
-  #  obj: a mer object
-  #
-  # Returns: A numeric vector with fixed effect coefficients
   val <- fixef(object)
   class(val) <- "coef.mer"
   return(val)
 }
+coef2.lme <- function(object, ...) {
+  return(coef2.merMod(object))
+}
 
 vcov2 <- function(object, ...) UseMethod('vcov2', object)
 vcov2.glm <- function(object, ...) vcov(object)
+vcov2.lme <- function(object, ...) vcov(object)
 vcov2.merMod <- function(object, ...) {
   # Overwriting mer variance function to match glm's format
   #
@@ -140,7 +139,8 @@ summary.gfo <- function(obj) {
     unstd.coefs <- round(coef(obj)[test.coefs], 3)
     std.coefs <- round(scoef(obj)[test.coefs], 3)
     pretty.p.val <- c(sprintf("%.4f", obj$p.values[term]), rep('pval above', p - 1))
-    update <- data.frame(obj$term.coef.map[[term]], pretty.p.val, unstd.coefs, std.coefs)
+    update <- data.frame(obj$term.coef.map[[term]], pretty.p.val, unstd.coefs,
+                         std.coefs)
     names(update) <- names(summary.df)
     summary.df <- rbind(summary.df, update)
   }
@@ -148,18 +148,41 @@ summary.gfo <- function(obj) {
     summary.df$odds.ratio <- round(exp(summary.df[, "Unstandardized coefs"]), 3)
   }
   if (length(obj$random.terms) > 0) {
-   cat("\n\n###  Random Effects  ###\n\n")
-   var.comps <- list()
-   for (i in 1:obj$m) {
-     var.corr <- lme4:::formatVC(VarCorr(obj$fitted.list[[i]]))
-     var.comps[[i]] <- as.numeric(var.corr[, "Variance"])
-   }
-   mean.vc <- Reduce("+", var.comps)
-   var.corr[, 3] <- round(mean.vc, 2)
-   var.corr[, 4] <- round(sqrt(mean.vc), 2)
-   print(var.corr, quote = F, digits = 2) 
+    var.comps <- list()
+    ar.vec <- c()
+    nlme.flag <- FALSE
+    for (i in 1:obj$m) {
+      if (class(obj$fitted[[i]]) == "lme") {
+        nlme.flag <- TRUE
+        library(nlme)
+        var.comps[[i]] <- c(getVarCov(obj$fitted.list[[i]]),
+                            obj$fitted.list[[i]]$sigma^2)
+        # TODO un-hard code subject
+        var.corr <- data.frame(Groups = c("Subject",  "Residual"),
+                               Name = c("(Intercept)", ""),
+                               Variance = numeric(2))
+        model.struct <- summary(obj$fitted[[i]])$modelStruct
+        cor.struct <- summary(model.struct)$corStruct
+        # Changing class to corAR1
+        #class(cor.struct) <- attr(cor.struct, "oClass")
+        #print(as.numeric(coef(cor.struct, unconstrained = FALSE)))
+        ar.parm <- nlme:::coef.corAR1(cor.struct, unconstrained = FALSE)
+        ar.vec <- c(ar.vec, ar.parm)
+      } else {
+        # var.corr contains names that do not change with i
+        var.corr <- lme4:::formatVC(VarCorr(obj$fitted.list[[i]]))
+        var.comps[[i]] <- (as.numeric(var.corr[, "Std.Dev."]))^2
+      }
+    }
+    mean.vc <- Reduce("+", var.comps) / length(var.comps)
+    var.corr[, 3] <- round(sqrt(mean.vc), 2)
+    cat("\n\n###  Random Effects  ###\n\n")
+    print(var.corr, quote = F, digits = 2) 
+    if (nlme.flag) {
+      cat("\n AR1 parameter estimate from nlme:\n")
+      cat(round(mean(ar.vec), 2), "\n")
+    } 
   }
-
   row.names(summary.df) <- NULL
   cat("\n### Type II analysis of fitted terms ###\n\n")
   print(summary.df)
@@ -173,6 +196,8 @@ summary.gfo <- function(obj) {
     cat("No well-defined R-squared is available.\n\n")
     cat("McFadden's generalized R-squared:", round(obj$mcfaddens.r2, 4), "\n\n")
     cat("Cox & Snell pseudo R-squared: ", round(obj$coxsnell.r2, 4), "\n")
+  } else {
+    cat("No fit statistics have been selected for this model\n")
   }
 }
 
@@ -209,7 +234,7 @@ CollectModelQuantities <- function(fit, data, null.model) {
   return(obj)
 }
 
-FitModel <- function(formula, data, family = gaussian) {
+FitModel <- function(formula, data, family = gaussian, ts.model = NULL) {
   # Fits model with, optionally, missing data and random effects
   #
   # Args:
@@ -218,7 +243,7 @@ FitModel <- function(formula, data, family = gaussian) {
   #  family: the family functions in R
   #
   # Returns: a gfo model object
-  gfo <- BackwardEliminate(formula, data, 1, family, verbose = FALSE)
+  gfo <- BackwardEliminate(formula, data, 1, family, ts.model, verbose = FALSE)
   gfo$var.select.type <- "none"
   gfo$var.select.cutoff <- NA
   return(gfo)
@@ -256,7 +281,8 @@ GetWaldPValue <- function(fitted, drop) {
 GetEstimates <- function(data, ...) UseMethod("GetEstimates", data)
 
 GetEstimates.data.frame <- function(data, formula, family, null.model,
-                                    random.terms = character(0)) {
+                                    random.terms = character(0),
+                                    ts.model = NULL) {
   # generalized fitted model (gfo) constructor for data.frame input data set
   #
   # Args:
@@ -270,12 +296,39 @@ GetEstimates.data.frame <- function(data, formula, family, null.model,
   if (length(random.terms) == 0) {
     library(splines)
     model.fit <- glm(formula = formula, family = family(), data = data)
+    if (!is.null(ts.model)) {
+      stop("Implement subject-specific random effect to use ts.model")
+    }
   } else {
     library(lme4)
     library(splines)
     if (family()$family == "gaussian") {
-      model.fit <- lmer(formula = formula, data = data)
+      if (!is.null(ts.model)) {
+        if (length(random.terms) > 1) {
+          stop("Only one random term is allowed for use with ts.model")
+        }
+        library(nlme)
+        # TODO: fix D.R.Y. violation (sequential.R)
+        all.terms <- attributes(terms(formula))$term.labels
+        fixed.terms <- all.terms[!grepl("\\|", all.terms)]
+        response <- all.vars(formula)[1]
+        fixed.formula <- as.formula(paste0(response, "~",
+                                paste(fixed.terms, collapse = "+")))
+        random.formula <- as.formula(paste0("~", random.terms[1]))
+        if (ts.model == "ar1") {
+          model.fit <- lme(fixed.formula, data = data,
+                           random = random.formula,
+                           cor = corAR1(0.5, form = random.formula))
+        } else {
+          stop("That ts.model option has not yet been implemented")
+        }
+      } else {
+        model.fit <- lmer(formula = formula, data = data)
+      }
     } else {
+      if (!is.null(ts.model)) {
+        stop("Sorry, within-subject time series only available for gaussian")
+      }
       model.fit <- glmer(formula = formula, data = data, family = family)
     }
   }
@@ -296,7 +349,7 @@ GetEstimates.data.frame <- function(data, formula, family, null.model,
 }
 
 GetEstimates.mids <- function(mids, formula, family, null.model,
-                              random.terms = character(0)) {
+                              random.terms = character(0), ts.model = NULL) {
   # generalized fitted model (gfo) constructor for mids (imputed data set)
   #
   # Args:
@@ -309,30 +362,62 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   #  Returns: a gfo S3 object
   m <- mids$m
   library(parallel)
-    
   if (length(random.terms) == 0) {
     analysis.list <- mclapply(c(1:m),
                               function(i){
                                 library(splines)
-                                glm(formula, data = complete(mids, i),
+                                glm(formula = formula, data = complete(mids, i),
                                     family = family)},
                               mc.cores = 5)
   } else {
-    library(lme4)
     cl <- makeCluster(getOption("cl.cores", 5))
-    analysis.list <- parLapply(cl, c(1:m),
+    if (family()$family == "gaussian") {
+      # Handle Gaussian ts models
+      if (!is.null(ts.model)) {
+        if (length(random.terms) > 1) {
+          stop("Only one random term is allowed for use with ts.model")
+        }
+        all.terms <- attributes(terms(formula))$term.labels
+        fixed.terms <- all.terms[!grepl("\\|", all.terms)]
+        response <- all.vars(formula)[1]
+        fixed.formula <- as.formula(paste0(response, "~",
+                                paste(fixed.terms, collapse = "+")))
+        random.formula <- as.formula(paste0("~", random.terms[1])) 
+        if (ts.model == "ar1") {
+          analysis.list <- parLapply(cl, c(1:m), function(i) {
+                           library(nlme)
+                           library(splines)
+                           return(lme(fixed.formula, data = complete(mids, i),
+                                      random = random.formula,
+                                      cor = corAR1(0.5, form = random.formula)))
+                                  }) 
+        } else {
+          stop("That ts.model option has not yet been implemented")
+        }
+      } else {
+      # Handle Gaussian non-ts models 
+        analysis.list <- parLapply(cl, c(1:m),
+                               function(i) {
+                                 library(lme4)
+                                 library(splines)
+                                 return(lmer(formula = formula,
+                                             data = complete(mids, i)))})
+      }
+    } else {
+       # Handle non-Gaussian random effects models 
+        if (!is.null(ts.model)) {
+               stop("Sorry, within-subject time series only available for gaussian")
+        }
+        analysis.list <- parLapply(cl, c(1:m),
                                function(i){
                                  library(lme4)
                                  library(splines)
-                                 if(family()$family == "gaussian") {
-                                   return(lmer(formula = formula,
-                                               data = complete(mids, i)))
-                                 } else {
-                                   return(glmer(formula = formula,
-                                                data = complete(mids, i),
-                                                family = family))
-                                }})
-  stopCluster(cl)
+                                 return(glmer(formula = formula,
+                                        data = complete(mids, i),
+                                        family = family))
+                                })
+     }
+    stopCluster(cl)
   }
   mat.list <- list()
   coef.list <- list()
@@ -341,7 +426,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   l <- 0  # number of elements in the above list. Increments.
   for (i in 1:m) {
     current.analysis <- analysis.list[[i]]
-    quantities <- try(CollectModelQuantities(current.analysis, complete(mids),
+    quantities <- try(CollectModelQuantities(current.analysis, complete(mids, i),
                                              null.model))
     if (class(quantities) == "try-error") {
       warning("Error. Model run dropped.")

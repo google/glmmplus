@@ -32,7 +32,8 @@ GetFastFSR <- function(n.total.vars, n.model.vars, alpha, verbose = FALSE) {
 }
 
 BackwardEliminate <- function(formula, data, cutoff = .05,
-                              family = gaussian, verbose = TRUE) {
+                              family = gaussian, ts.model = NULL,
+                              verbose = TRUE) {
   # Model selection by backward elimination from a full model to a reduced one
   #
   # Args:
@@ -44,12 +45,12 @@ BackwardEliminate <- function(formula, data, cutoff = .05,
   #
   # Returns: a gfo model object
   final.model <- SequentiallyBuildModel(formula, data, cutoff, family,
-                                        "backward", verbose)
+                                        ts.model, type = "backward", verbose)
   return(final.model)
 }
 
 ForwardSelect <- function(formula, data, cutoff = .05, family = gaussian,
-                          verbose = TRUE) {
+                          ts.model = NULL, verbose = TRUE) {
   # Model selection by forward selection from a null model onwards
   #
   # Args:
@@ -60,7 +61,7 @@ ForwardSelect <- function(formula, data, cutoff = .05, family = gaussian,
   #
   # Returns: a gfo model object
   forward.model <- SequentiallyBuildModel(formula, data, cutoff, family,
-                                          "forward", verbose)
+                                          ts.model, type = "forward", verbose)
   if (length(forward.model$final.fixed.terms) == 0) {
     final.model <- forward.model
   } else {
@@ -69,13 +70,12 @@ ForwardSelect <- function(formula, data, cutoff = .05, family = gaussian,
     final.model$var.select.type <- "forward"
     final.model$var.select.cutoff <- forward.model$var.select.cutoff
     final.model$fsr.est <- forward.model$fsr.est
-
   }
   return(final.model)
 }
 
 SequentiallyBuildModel <- function(formula, data, cutoff = .05,
-                                   family = gaussian, type, verbose = TRUE) {
+                                   family = gaussian, ts.model, type, verbose) {
   # Private function encaptulating the common logic of the stepwise procedures
   #
   # Args:
@@ -84,6 +84,7 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
   #  cutoff: the alpha-to-stay or alpha-to-enterparameter
   #  family: the family functions in R
   #  type: either "forward" or "backward"
+  #  ts.model:
   #
   # Returns: a gfo model object
   library(splines)
@@ -103,7 +104,8 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
     if (type == "backward") {
       form <- CreateFormula(response, iteration.terms, random.terms)
       test.model <- current.model <- GetEstimates(data, form, family,
-                                                  null.model, random.terms)
+                                                  null.model, random.terms,
+                                                  ts.model)
     }
     p.values <- c()
     if (verbose) {
@@ -113,7 +115,8 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
     for (var in iteration.terms) {
       if (type == "forward") {  # fit model for each variable
         form <- CreateFormula(response, union(model.terms, var), random.terms)
-        test.model <- GetEstimates(data, form, family, null.model, random.terms)
+        test.model <- GetEstimates(data, form, family, null.model, random.terms,
+                                   ts.model)
       }
       test.coefs <- GetCoefNames(var, complete(data))
       new.pvalue <- tryCatch(GetWaldPValue(test.model, test.coefs),
@@ -137,7 +140,8 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
     form <- CreateFormula(response, model.terms, random.terms)
     if (verbose) cat("Iteration", i, "formula:\n", deparse(form), "\n")
   }
-  current.model <- GetEstimates(data, form, family, null.model, random.terms)
+  current.model <- GetEstimates(data, form, family, null.model, random.terms,
+                                ts.model)
   names(p.values) <- iteration.terms
 
   fsr.est <- GetFastFSR(n.total.vars = length(fixed.terms),
