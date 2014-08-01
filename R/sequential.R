@@ -65,11 +65,12 @@ ForwardSelect <- function(formula, data, cutoff = .05, family = gaussian,
   if (length(forward.model$final.fixed.terms) == 0) {
     final.model <- forward.model
   } else {
-    final.model <- FitModel(forward.model$formula, data, family)
+    # This will appear a an abrupt switch to backward elimination
+    final.model <- FitModel(forward.model$formula, data, family, ts.model)
     # Replacing data that was rewritten above
     final.model$var.select.type <- "forward"
     final.model$var.select.cutoff <- forward.model$var.select.cutoff
-    final.model$fsr.est <- forward.model$fsr.est
+    final.model$history <- forward.model$history
   }
   return(final.model)
 }
@@ -95,8 +96,16 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
   null.model <- glm(CreateFormula(response, 1), family, complete(data))
   iteration.terms <- fixed.terms
   term.coef.map <- list()
-  if (type == "forward") model.terms <- character(0)
-  if (type == "backward") model.terms <- fixed.terms
+  history <- list()
+  if (type == "forward") {
+    model.terms <- character(0)
+    history[[1]] <- list(formula = CreateFormula(response, 1), fsr.est = 0)
+  }
+  if (type == "backward") {
+    model.terms <- fixed.terms
+    history[[1]] <- list(formula = CreateFormula(response, iteration.terms,
+                                                 random.terms), fsr.est = 0)
+  }
   continue <- TRUE
   i <- 0
   while (continue) {
@@ -134,21 +143,23 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
         cat("var: ", var, ", pvalue: ", sprintf("%.4f", new.pvalue), " \n")
       }
     }
-    if (verbose) cat("--------\n")
-    if (type == "forward") ForwardSelectCore()
-    if (type == "backward") BackwardEliminationCore()
-    form <- CreateFormula(response, model.terms, random.terms)
-    if (verbose) cat("Iteration", i, "formula:\n", deparse(form), "\n")
+    iter.list <- RunSelectionCore(type, i, iteration.terms, p.values,
+                                           weak.term.queue, cutoff, verbose,
+                                           fixed.terms, model.terms, continue)
+
+    form <- CreateFormula(response, iter.list$model.terms, random.terms)
+    iteration.terms <- iter.list$iteration.terms
+    weak.term.queue <- iter.list$weak.term.queue
+    p.values <- iter.list$p.values
+    continue <- iter.list$continue
+    history[[length(history) + 1]] <- list(formula = form,
+                                           fsr = iter.list$fsr.est)
+    if (verbose) {
+      cat("\n\nIteration", i, "formula:\n", deparse(form), "\n")
+    }
   }
   current.model <- GetEstimates(data, form, family, null.model, random.terms,
                                 ts.model)
-  names(p.values) <- iteration.terms
-
-  fsr.est <- GetFastFSR(n.total.vars = length(fixed.terms),
-                        n.model.vars = length(model.terms),
-                        alpha = cutoff)
-  if (verbose) cat("Final FSR estimate : ", round(fsr.est, 3), "\n")
-
   current.model$p.values <- p.values
   current.model$term.coef.map <- term.coef.map
   current.model$initial.fixed.terms <- fixed.terms
@@ -158,13 +169,32 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
   current.model$call.formula <- formula
   current.model$var.select.type <- type
   current.model$var.select.cutoff <- cutoff
-  current.model$fsr.est <- fsr.est
+  current.model$history <- history
   return(current.model)
 }
 
-ForwardSelectCore <- function() {
+RunSelectionCore <- function(var.select.type, iteration, iteration.terms,
+                             p.values,
+                             weak.term.queue, cutoff, verbose,
+                             fixed.terms, model.terms, continue) {
+  ## TODO: find out what this design pattern is called, or find better one
+  if (var.select.type == "forward") {
+    return(ForwardSelectCore(iteration, iteration.terms, p.values,
+                             weak.term.queue, cutoff, verbose,
+                             fixed.terms, model.terms, continue))
+  }
+  if (var.select.type == "backward") {
+    return(BackwardEliminationCore(iteration, iteration.terms, p.values,
+                             weak.term.queue, cutoff, verbose,
+                             fixed.terms, model.terms, continue))
+  }
+}
+
+# TODO (baogorek): Fix ForwardSelectCore!
+ForwardSelectCore <- function(iteration, iteration.terms, p.values,
+                              weak.term.queue, cutoff, verbose,
+                              fixed.terms, model.terms, continue) {
   # The stepwise logic unique to forward selection
-  with(parent.frame(), {
   msv.index <- which.min(p.values)
   smallest.p.value <- p.values[msv.index]
   most.sig.var <- iteration.terms[msv.index]
@@ -173,25 +203,27 @@ ForwardSelectCore <- function() {
     model.terms <- union(model.terms, most.sig.var)
     iteration.terms <- iteration.terms[-msv.index]
     if (verbose) {
-      cat("Forward selection iteration", i, ",adding term", most.sig.var,
-          "to model\n")
+      cat("Forward selection iteration", iteration, ",adding term",
+          most.sig.var, "to model\n")
     }
     fsr.est <- GetFastFSR(n.total.vars = length(fixed.terms),
                           n.model.vars = length(model.terms),
                           alpha = smallest.p.value)
-    if (verbose) cat("\n** FSR estimate : ", round(fsr.est, 3), "***\n\n")
-
   }
   if (length(iteration.terms) == 0 || smallest.p.value > cutoff) {
      continue <- FALSE
      if (verbose) cat("No further terms have p-values <", cutoff, "\n")
   }
-  })
+  return(list(fsr = fsr.est, model.terms = model.terms,
+              iteration.terms = iteration.terms,
+              weak.term.queue = weak.term.queue, p.values = p.values,
+              continue = continue))
 }
 
-BackwardEliminationCore <- function() {
+BackwardEliminationCore <- function(iteration, iteration.terms, p.values,
+                                    weak.term.queue, cutoff, verbose,
+                                    fixed.terms, model.terms, continue) {
   # The stepwise logic unique to backward selection
-  with(parent.frame(), {
     lsv.index <- which.max(p.values)
     if (max(p.values) == -999) {  # Bad run. Drop term from weak.term.queue.
       least.sig.var <- weak.term.queue[1]
@@ -200,29 +232,36 @@ BackwardEliminationCore <- function() {
       warning("All runs failed. Using p-values from previous runs")
     } else {
       largest.p.value <- p.values[lsv.index]
+      # The smallest alpha such that all remaining  terms stay in the model
+      next.largest.p.value <- ifelse(length(p.values) > 1,
+                                     max(p.values[-lsv.index]),
+                                     cutoff)
       least.sig.var <- iteration.terms[lsv.index]
       # creation of weak.term.queue: keep a sequence of the least significant
       # variables from a successful run. Use it when an iteration fails.
       weak.term.queue <- iteration.terms[order(p.values, decreasing = TRUE)][-1]
     }
     if (length(iteration.terms) > 0 && largest.p.value > cutoff) {
+      p.values <- p.values[-lsv.index]
+      names(p.values) <- iteration.terms[-lsv.index]
       model.terms <- iteration.terms <- setdiff(iteration.terms, least.sig.var)
       if (verbose) {
-        cat("Backward Elimination iteration", i, ", dropping term", least.sig.var,
-            "from model\n")
+        cat("Backward Elimination iteration", iteration, ", dropping term",
+            least.sig.var, "from model\n")
       }
-
-    second.largest.p.value = max(p.values[-largest.p.value])
-    fsr.est <- GetFastFSR(n.total.vars = length(fixed.terms),
-                          n.model.vars = length(model.terms),
-                          alpha = second.largest.p.value)
-    if (verbose) cat("\n***FSR estimate : ", round(fsr.est, 3), "****\n\n")
     }
-
     if (length(iteration.terms) == 0 || largest.p.value <= cutoff) {
       continue <- FALSE
+      model.terms <- iteration.terms
+      names(p.values) <- iteration.terms
       if (verbose) cat("All remaining terms have p-values <", cutoff, "\n")
-
     }
-  })
+    fsr.est <- GetFastFSR(n.total.vars = length(fixed.terms),
+                          n.model.vars = length(model.terms),
+                          alpha = next.largest.p.value)
+
+    return(list(fsr = fsr.est, model.terms = model.terms,
+                iteration.terms = iteration.terms,
+                weak.term.queue = weak.term.queue, p.values = p.values,
+                continue = continue))
 }

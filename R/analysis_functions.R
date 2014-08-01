@@ -119,7 +119,10 @@ print.gfo <- function(obj) {
   display.formula <- paste(deparse(obj$formula), collapse = " ")
   display.formula <- gsub("\\s+", " ", display.formula)
   cat("R Formula Syntax:", display.formula, "\n")
-  if (class(obj$data) == "mids") cat("\nMultiple Imputation performed")
+  if (class(obj$data) == "mids") {
+    cat("\nNote: Multiple Imputation of missing values performed\n")
+    cat("P-values adjusted according to Rubin's Rules\n\n")
+  }
 }
 
 summary.gfo <- function(obj) {
@@ -363,6 +366,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   m <- mids$m
   library(parallel)
   if (length(random.terms) == 0) {
+    library(splines)
     analysis.list <- mclapply(c(1:m),
                               function(i){
                                 library(splines)
@@ -384,6 +388,8 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
                                 paste(fixed.terms, collapse = "+")))
         random.formula <- as.formula(paste0("~", random.terms[1])) 
         if (ts.model == "ar1") {
+          library(nlme)
+          library(splines)
           analysis.list <- parLapply(cl, c(1:m), function(i) {
                            library(nlme)
                            library(splines)
@@ -396,6 +402,8 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
         }
       } else {
       # Handle Gaussian non-ts models 
+        library(lme4)
+        library(splines)
         analysis.list <- parLapply(cl, c(1:m),
                                function(i) {
                                  library(lme4)
@@ -408,6 +416,8 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
         if (!is.null(ts.model)) {
                stop("Sorry, within-subject time series only available for gaussian")
         }
+        library(lme4)
+        library(splines)
         analysis.list <- parLapply(cl, c(1:m),
                                function(i){
                                  library(lme4)
