@@ -99,12 +99,14 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
   history <- list()
   if (type == "forward") {
     model.terms <- character(0)
-    history[[1]] <- list(formula = CreateFormula(response, 1), fsr.est = 0)
+    history[[1]] <- list(formula = CreateFormula(response, 1), fsr.est = 0,
+                         term = "")
   }
   if (type == "backward") {
     model.terms <- fixed.terms
     history[[1]] <- list(formula = CreateFormula(response, iteration.terms,
-                                                 random.terms), fsr.est = 0)
+                                                 random.terms),
+                         fsr.est = 0, term = "")
   }
   continue <- TRUE
   i <- 0
@@ -152,8 +154,11 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
     weak.term.queue <- iter.list$weak.term.queue
     p.values <- iter.list$p.values
     continue <- iter.list$continue
-    history[[length(history) + 1]] <- list(formula = form,
-                                           fsr = iter.list$fsr.est)
+    if (iter.list$term.added.or.dropped) {
+      history[[length(history) + 1]] <- list(formula = form,
+                                             fsr = iter.list$fsr,
+                                             term = iter.list$term.of.interest)
+    }
     if (verbose) {
       cat("\n\nIteration", i, "formula:\n", deparse(form), "\n")
     }
@@ -217,13 +222,15 @@ ForwardSelectCore <- function(iteration, iteration.terms, p.values,
   return(list(fsr = fsr.est, model.terms = model.terms,
               iteration.terms = iteration.terms,
               weak.term.queue = weak.term.queue, p.values = p.values,
-              continue = continue))
+              continue = continue, term.of.interest = most.sig.var,
+              term.added.or.dropped = F))
 }
 
 BackwardEliminationCore <- function(iteration, iteration.terms, p.values,
                                     weak.term.queue, cutoff, verbose,
                                     fixed.terms, model.terms, continue) {
   # The stepwise logic unique to backward selection
+    term.added.or.dropped <- FALSE
     lsv.index <- which.max(p.values)
     if (max(p.values) == -999) {  # Bad run. Drop term from weak.term.queue.
       least.sig.var <- weak.term.queue[1]
@@ -235,7 +242,7 @@ BackwardEliminationCore <- function(iteration, iteration.terms, p.values,
       # The smallest alpha such that all remaining  terms stay in the model
       next.largest.p.value <- ifelse(length(p.values) > 1,
                                      max(p.values[-lsv.index]),
-                                     cutoff)
+                                     largest.p.value)
       least.sig.var <- iteration.terms[lsv.index]
       # creation of weak.term.queue: keep a sequence of the least significant
       # variables from a successful run. Use it when an iteration fails.
@@ -246,6 +253,7 @@ BackwardEliminationCore <- function(iteration, iteration.terms, p.values,
       names(p.values) <- iteration.terms[-lsv.index]
       model.terms <- iteration.terms <- setdiff(iteration.terms, least.sig.var)
       if (verbose) {
+        term.added.or.dropped <- TRUE
         cat("Backward Elimination iteration", iteration, ", dropping term",
             least.sig.var, "from model\n")
       }
@@ -263,5 +271,6 @@ BackwardEliminationCore <- function(iteration, iteration.terms, p.values,
     return(list(fsr = fsr.est, model.terms = model.terms,
                 iteration.terms = iteration.terms,
                 weak.term.queue = weak.term.queue, p.values = p.values,
-                continue = continue))
+                continue = continue, term.of.interest = least.sig.var,
+                term.added.or.dropped = term.added.or.dropped))
 }

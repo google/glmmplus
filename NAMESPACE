@@ -14,6 +14,7 @@ export(GetVariableGroupImpact)
 export(ReformatNames)
 export(vcov.gfo)
 export(coef.gfo)
+export(plotFSR)
 
 importFrom(mice, complete)
 

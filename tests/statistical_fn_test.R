@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set.seed(1234)
+set.seed(1474)
 N <- 500
-complete.df <- data.frame(x = rnorm(N), z = rnorm(N), w = rnorm(N),
+complete.df <- data.frame(x = rnorm(N),
+                          z = rnorm(N),
+                          w = rnorm(N),
+                          r = rnorm(N),
                           factor.1 = factor(sample(30, N, replace = TRUE)),
                           factor.2 = factor(sample(5, N, replace = TRUE)))
 random.effects.1 <- rnorm(30, mean = 0, sd = 2)
@@ -108,7 +111,7 @@ TestSequentialEdgeCases <- function() {
 
 TestImputationGLMM <- function() {
   # glm all linear terms, multiply imputed data set
-  glm.impute <- BackwardEliminate(y ~ x + w + z, test.mids)
+  glm.impute <- BackwardEliminate(y ~ x + w + z + r, test.mids)
   checkEquals(sort(names(glm.impute$qbar[-1])), c("w", "x"))
 
   glm.impute <- BackwardEliminate(y.binary ~ x + w + z, test.mids,
@@ -128,8 +131,8 @@ TestImputationGLMM <- function() {
 
 TestGLMMsWithBasisFunctions <- function() {
   # Instead of variable names, looking for first letter of ns() and cut()
-  form <- formula(paste("y.binary ~ (1 | factor.1) +", spline.fn, "+ w + z"))
-  lmer.spline <- ForwardSelect(form, test.mids, family = binomial)
+  form <- formula(paste("y.binary ~ (1 | factor.1) +", spline.fn, "+ r + w + z"))
+  lmer.spline <- BackwardEliminate(form, test.mids, family = binomial)
   checkTrue(all(substr(names(lmer.spline$qbar[-1]), 1, 1) %in% c("n", "w")))
   rm(lmer.spline)
 
@@ -139,3 +142,4 @@ TestGLMMsWithBasisFunctions <- function() {
   checkTrue(all(substr(names(lmer.cut$qbar[-1]), 1, 1) %in% c("c", "w")))
   rm(lmer.cut)
 }
+
