@@ -35,6 +35,7 @@ WideToLong(data, id.name, response.base, time.varying.bases = c(""), sep = ".")
    }
 }
 
+\seealso{\code{\link{LongToWide}}}
 
 \examples{
 wide.df <- data.frame(pid           = 1:100,

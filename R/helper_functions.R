@@ -221,16 +221,13 @@ WideToLong.data.frame <- function(data, id.name, response.base,
   names(long) <- c(id.name, "period")
 
   for (var.base in c(response.base, time.varying.bases)) {
-    # Get the names of the variables
-    # knock them out of wide
+    # Get the names of the variables and take them out of wide
     regex <- paste0("^", gsub("\\.", "\\\\.",
                     paste0(var.base, sep)), "(.*)$")
     names <- grep(regex, names(data), value = TRUE)
- 
     subset <- data[, names] 
     ts.vec <- unlist(as.data.frame(t(subset)))
     long[, var.base] <- ts.vec
-
     for (name in names) {
       wide[, name] <- NULL
     }
@@ -242,6 +239,15 @@ WideToLong.data.frame <- function(data, id.name, response.base,
 LongToWide <- function(object, ...) UseMethod('LongToWide', object)
 LongToWide.data.frame <- function(data, id.name, period.name,
                                   time.varying.vars, sep = ".") {
+  # Transforms a data set with nested long structure into wide structure
+  #
+  # Args:
+  #   data: a data frame with multiple measurements on a subject
+  #   id.name: the subject identifier
+  #   period.name: The repeated measurement identifier
+  #   time.varying.vars: variables that take multiple values within subject
+  #   sep: The separator that will be used between the measurement and period
+  
   # Sort data by id, period
   data <- data[order(data[, id.name], data[, period.name]), ]
   stable.vars <- setdiff(names(data), c(period.name, time.varying.vars))
@@ -258,8 +264,6 @@ LongToWide.data.frame <- function(data, id.name, period.name,
      period.df <- data[data[, period.name] == period, c(id.name, var)]
      names(period.df) <-  c(id.name, paste(var, period, sep = sep))
      wide.df <- merge(wide.df, period.df, by = id.name, all.x = TRUE)
-     cat("var = ", var, ", period = ", period, ", nrow period = ",
-         nrow(period.df), "nrow wide.df = ", nrow(wide.df), "\n")
     }
   }
   return(wide.df)
