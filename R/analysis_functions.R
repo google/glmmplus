@@ -34,11 +34,6 @@ vcov2.merMod <- function(object, ...) {
   #  obj: a mer object
   #
   #  Returns: The variance matrix as a native matrix object
-#  rr <- as(lme4:::sigma(object)^2 *
-#           chol2inv(object@RX, size = object@dims['p']), "dpoMatrix")
-#  nms <- colnames(object@X)
-#  dimnames(rr) <- list(nms, nms)
-#  rr@factors$correlation <- as(rr, "corMatrix")
   rr <- vcov.merMod(object)
   var.mat <- try(as.matrix(rr))
   if (class(var.mat) == "matrix") {  # i.e., no errors
@@ -123,6 +118,7 @@ print.gfo <- function(obj) {
     cat("\nNote: Multiple Imputation of missing values performed\n")
     cat("P-values adjusted according to Rubin's Rules\n\n")
   }
+}
 
 plotFSR <- function(gfo) {
   # Plot how the False Selection Rate changes during the selection techniqu
@@ -135,22 +131,21 @@ plotFSR <- function(gfo) {
     term <- c(term, gfo$history[[i]]$term)
     fsr <- c(fsr, gfo$history[[i]]$fsr)
   }
-  par(las=2) # make label text perpendicular to axis
-  par(mar=c(5, 11, 4, 2)) #  margin: bottom, left, top, right 
+  par(las = 2) # make label text perpendicular to axis
+  par(mar = c(5, 11, 4, 2)) #  margin: bottom, left, top, right 
   barplot(fsr, names.arg = substr(term,1, 27), horiz = TRUE,
-          main = "Fast False Selection Rate Estimation", 
+          main = "Fast False Selection Rate Estimation",
           ylab = "", xlab = "Estimated FSR", xlim = c(0, .5))
   # TODO (baogorek): the 12 in arrows and 6 in text need to be dynamic
-  arrows(.4, 1, .4, 12)                      
-  text(.4, 6, "iteration", pos = 4)          
-                                                         
-  if (gfo$var.select.type == "forward") {                
-    message <- "term added from forward selection"       
-  } else if (gfo$var.select.type == "backward") {        
-    message <- "term dropped from backward elimination"  
-  }                                                      
-  par(las = 3)                                           
-  # TODO (baogorek): make padj dynamic (if necessary)    
+  arrows(.4, 1, .4, 12)
+  text(.4, 6, "iteration", pos = 4)
+  if (gfo$var.select.type == "forward") {
+    message <- "term added from forward selection"
+  } else if (gfo$var.select.type == "backward") {
+    message <- "term dropped from backward elimination"
+  }
+  par(las = 3)
+  # TODO (baogorek): make padj dynamic (if necessary)
   mtext(message, 2, col = "black", padj = -13.5, cex = 1.2, font = 3)
 }
 
