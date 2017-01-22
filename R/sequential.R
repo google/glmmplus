@@ -62,17 +62,18 @@ ForwardSelect <- function(formula, data, cutoff = .05, family = gaussian,
   # Returns: a gfo model object
   forward.model <- SequentiallyBuildModel(formula, data, cutoff, family,
                                           ts.model, type = "forward", verbose)
-  if (length(forward.model$final.fixed.terms) == 0) {
-    final.model <- forward.model
-  } else {
-    # This will appear a an abrupt switch to backward elimination
-    final.model <- FitModel(forward.model$formula, data, family, ts.model)
-    # Replacing data that was rewritten above
-    final.model$var.select.type <- "forward"
-    final.model$var.select.cutoff <- forward.model$var.select.cutoff
-    final.model$history <- forward.model$history
-  }
-  return(final.model)
+  # TODO (baogorek): delete after you're sure this is unneccessary
+  #if (length(forward.model$final.fixed.terms) == 0) {
+  #  final.model <- forward.model
+  #} else {
+  #  # This will appear a an abrupt switch to backward elimination
+  #  final.model <- FitModel(forward.model$formula, data, family, ts.model)
+  #  # Replacing data that was rewritten above
+  #  final.model$var.select.type <- "forward"
+  #  final.model$var.select.cutoff <- forward.model$var.select.cutoff
+  #  final.model$history <- forward.model$history
+  #}
+  return(forward.model)
 }
 
 SequentiallyBuildModel <- function(formula, data, cutoff = .05,
@@ -98,6 +99,7 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
   term.coef.map <- list()
   history <- list()
   if (type == "forward") {
+    weak.term.queue <- c() # For backward elimination
     model.terms <- character(0)
     history[[1]] <- list(formula = CreateFormula(response, 1), fsr.est = 0,
                          term = "")
@@ -120,8 +122,8 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
     }
     p.values <- c()
     if (verbose) {
-    cat("\n  **** Stepwise Iteration", i, "****\n")
-    cat("Testing individual terms...\n--------\n")
+      cat("\n  **** Stepwise Iteration", i, "****\n")
+      cat("Testing individual terms...\n--------\n")
     }
     for (var in iteration.terms) {
       if (type == "forward") {  # fit model for each variable
@@ -137,8 +139,11 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
                                return(bad.p)
                              })
       term.coef.map[[var]] <- test.coefs
-      if (new.pvalue < min(c(1, p.values)) && type == "forward") {
-        current.model <- test.model
+      if (new.pvalue < cutoff) {
+        test.model <- current.model <- GetEstimates(data, form, family,
+                                                    null.model, random.terms,
+                                                    ts.model)
+
       }
       p.values <- c(p.values, new.pvalue)
       if (verbose) {
@@ -151,7 +156,8 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
 
     form <- CreateFormula(response, iter.list$model.terms, random.terms)
     iteration.terms <- iter.list$iteration.terms
-    weak.term.queue <- iter.list$weak.term.queue
+    model.terms <- iter.list$model.terms
+    weak.term.queue <- iter.list$weak.term.queue # Backward elimination only
     p.values <- iter.list$p.values
     continue <- iter.list$continue
     if (iter.list$term.added.or.dropped) {
@@ -175,6 +181,7 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
   current.model$var.select.type <- type
   current.model$var.select.cutoff <- cutoff
   current.model$history <- history
+  print(current.model)
   return(current.model)
 }
 
@@ -195,7 +202,6 @@ RunSelectionCore <- function(var.select.type, iteration, iteration.terms,
   }
 }
 
-# TODO (baogorek): Fix ForwardSelectCore!
 ForwardSelectCore <- function(iteration, iteration.terms, p.values,
                               weak.term.queue, cutoff, verbose,
                               fixed.terms, model.terms, continue) {
@@ -203,10 +209,12 @@ ForwardSelectCore <- function(iteration, iteration.terms, p.values,
   msv.index <- which.min(p.values)
   smallest.p.value <- p.values[msv.index]
   most.sig.var <- iteration.terms[msv.index]
-
+  fsr.est <- 0 # if you never select anything, you have no false discoveries
+  term.added.or.dropped <- FALSE
   if (length(iteration.terms) > 0 && smallest.p.value <= cutoff) {
     model.terms <- union(model.terms, most.sig.var)
     iteration.terms <- iteration.terms[-msv.index]
+    term.added.or.dropped <- TRUE
     if (verbose) {
       cat("Forward selection iteration", iteration, ",adding term",
           most.sig.var, "to model\n")
@@ -223,7 +231,7 @@ ForwardSelectCore <- function(iteration, iteration.terms, p.values,
               iteration.terms = iteration.terms,
               weak.term.queue = weak.term.queue, p.values = p.values,
               continue = continue, term.of.interest = most.sig.var,
-              term.added.or.dropped = F))
+              term.added.or.dropped = term.added.or.dropped))
 }
 
 BackwardEliminationCore <- function(iteration, iteration.terms, p.values,

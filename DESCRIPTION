@@ -1,12 +1,20 @@
 Package: glmmplus
 Date: 2014-07-02
 Title: Multiple Imputation and Model Selection
+Description: Model selection tools for generalized linear (mixed) models
+             with accomidations for missing data.
 Version: 0.90  
 Author: Ben Ogorek <baogorek@google.com>,
         Caitlin Hogan <caitlinh@google.com>,
 Maintainer: Ben Ogorek <baogorek@google.com>
-Imports: splines, lme4, mice, mvtnorm, nlme
-Suggests: Runit
-Description: Model selection tools for generalized linear (mixed) models
-             with accomidations for missing data.
+URL: https://github.com/google/glmmplus
+BugReports: https://github.com/google/glmmplus/issues
+Imports:
+  splines,
+  lme4,
+  mice,
+  mvtnorm,
+  nlme
+Suggests:
+  testthat
 

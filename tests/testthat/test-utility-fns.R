@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+context("Testing secondary utility functions")
+
 TestTrim <- function() {
   test.str1 <- " abc "
-  checkEquals(glmmplus:::trim(test.str1), "abc")
+  expect_equal(glmmplus:::trim(test.str1), "abc")
 }
 
 TestGetFnArg <- function() {
@@ -24,20 +26,20 @@ TestGetFnArg <- function() {
   test.str4 <- "ns(my.var, other.arg = 2)"
   test.str5 <- "cut(x, c(-10, -1, 0, 1, 10))"
 
-  checkTrue(glmmplus:::GetFnArg(test.str1) == "my.var")
-  checkTrue(glmmplus:::GetFnArg(test.str2) == "my.var")
-  checkTrue(glmmplus:::GetFnArg(test.str3) == "my.var")
-  checkTrue(glmmplus:::GetFnArg(test.str4) == "my.var")
-  checkTrue(glmmplus:::GetFnArg(test.str5) == "x")
+  expect_true(glmmplus:::GetFnArg(test.str1) == "my.var")
+  expect_true(glmmplus:::GetFnArg(test.str2) == "my.var")
+  expect_true(glmmplus:::GetFnArg(test.str3) == "my.var")
+  expect_true(glmmplus:::GetFnArg(test.str4) == "my.var")
+  expect_true(glmmplus:::GetFnArg(test.str5) == "x")
 }
 
 TestRelabelSplits <- function() {
   original <- sample(1:5, 1000, replace = TRUE)
   new <- glmmplus:::RelabelSplits(original, 4:5)
 
-  checkTrue(all(new[new %in% 1:3] == original[original %in% 1:3]))
-  checkTrue(!all(new[new %in% 4:5] == original[original %in% 4:5]))
-  checkTrue(all(table(new) == table(original)))
+  expect_true(all(new[new %in% 1:3] == original[original %in% 1:3]))
+  expect_true(!all(new[new %in% 4:5] == original[original %in% 4:5]))
+  expect_true(all(table(new) == table(original)))
 }
 
 TestContinuousVarOps <- function() {
@@ -50,19 +52,19 @@ TestContinuousVarOps <- function() {
   test.df$f <- c(T, F, T, T, F, T, T)
 
   logical.vec <- glmmplus:::IsContinuous(test.df)
-  checkEquals(names(test.df[, logical.vec]), c("a", "b"))
+  expect_equal(names(test.df[, logical.vec]), c("a", "b"))
 
   std.devs <- glmmplus:::GetStandardDevs(test.df)
-  checkEquals(names(std.devs), c("a", "b"))
-  checkEquals(as.numeric(std.devs["a"]), sd(1:7))
+  expect_equal(names(std.devs), c("a", "b"))
+  expect_equal(as.numeric(std.devs["a"]), sd(1:7))
 }
 
 TestMatrixTrace <- function() {
   # Used in GetWaldPValues()
   matrix.1 <- matrix(c(1, 4, 2, 3), ncol = 2)
   matrix.2 <- matrix(c(3, 2, 5, 0, 0, 1, 2, 4, 5), ncol = 3)
-  checkEquals(glmmplus:::tr(matrix.1), 4)
-  checkEquals(glmmplus:::tr(matrix.2), 8)
+  expect_equal(glmmplus:::tr(matrix.1), 4)
+  expect_equal(glmmplus:::tr(matrix.2), 8)
 }
 
 TestExtractCoefNames <- function() {
@@ -73,27 +75,27 @@ TestExtractCoefNames <- function() {
   w <- cut(x, c(-Inf, -2, 0, 2, Inf))
   my.df <- data.frame(x = x, z = z, w = w)
   my.spline <- MakeSplineStr("x", my.df, c(-1, 1))
-  checkEquals(GetCoefNames("x", my.df), "x")
-  checkEquals(GetCoefNames("z", my.df), c("zgreen", "zred"))
-  checkEquals(GetCoefNames("w", my.df), c("w(-2,0]", "w(0,2]", "w(2, Inf]"))
-  checkEquals(GetCoefNames(my.spline, my.df), paste0(my.spline, c(1:3)))
+  expect_equal(GetCoefNames("x", my.df), "x")
+  expect_equal(GetCoefNames("z", my.df), c("zgreen", "zred"))
+  expect_equal(GetCoefNames("w", my.df), c("w(-2,0]", "w(0,2]", "w(2, Inf]"))
+  expect_equal(GetCoefNames(my.spline, my.df), paste0(my.spline, c(1:3)))
 }
 
 TestExtractRandomTerms <- function() {
   random.terms <- glmmplus:::GetRandomEffectVars(c(" (1 | x)", " ( 1 | y)"))
-  checkTrue(all(random.terms == c("x", "y")))
+  expect_true(all(random.terms == c("x", "y")))
 }
 
 TestRemoveRandomEffectVars <- function() {
   effects.vec <- c(" (1 | x)", " ( 1 | y)", " z ")
   fixed.terms <- glmmplus:::RemoveRandomEffectVars(effects.vec)
-  checkTrue(all(fixed.terms == c("z")))
+  expect_true(all(fixed.terms == c("z")))
 }
 
 TestReformatNames <- function() {
   test.df <- data.frame(Meas_1 = c(1, 1, 1), Meas_2 = c(2, 1, 2))
   names(test.df) <- ReformatNames(names(test.df))
-  checkEquals(names(test.df), c("meas.1", "meas.2"))
+  expect_equal(names(test.df), c("meas.1", "meas.2"))
 }
 
 TestGetRelatedVars <- function () {
@@ -101,21 +103,21 @@ TestGetRelatedVars <- function () {
                         prevyr.1 = c(3, 2), prevyr.2 = c(2, 3))
 
   art.vec <- GetRelatedVars("art.", test.df)
-  checkEquals(art.vec, c("art.painting", "art.drawing"))
+  expect_equal(art.vec, c("art.painting", "art.drawing"))
 
   prevyr.vec <- GetRelatedVars("prevyr.", test.df)
-  checkEquals(prevyr.vec, c("prevyr.1", "prevyr.2"))
+  expect_equal(prevyr.vec, c("prevyr.1", "prevyr.2"))
 }
 
 TestMakeSplineString <- function() {
   my.df <- data.frame(x = c(1, 2, 3))
   my.ns <- MakeSplineStr("x", my.df, c(1.5, 2.5))
-  checkEquals(my.ns, "ns(x, knots = c(1.5, 2.5), Boundary.knots = c(1, 3))")
+  expect_equal(my.ns, "ns(x, knots = c(1.5, 2.5), Boundary.knots = c(1, 3))")
 }
 
 TestCreateFormula <- function() {
   form <- glmmplus:::CreateFormula("y", c("x", "z"), c(" 1 | w "))
-  checkEquals(form, formula("y ~ (1 | w) + x + z"))
+  expect_equal(form, formula("y ~ (1 | w) + x + z"))
 }
 
 TestReshaping <- function() {
@@ -129,10 +131,10 @@ TestReshaping <- function() {
                         x.t = x.t, z = c(z[1], z[1], z[2], z[2]))
 
   test.long <- WideToLong(wide.df, "p.id", "y", time.varying.bases = c("x.t"))
-  checkTrue(all(test.long == long.df))
+  expect_true(all(test.long == long.df))
 
   test.wide <- LongToWide(long.df, "p.id", "period", c("y", "x.t"), sep = ".")
-  checkTrue(all(test.wide[, order(names(test.wide))] ==
+  expect_true(all(test.wide[, order(names(test.wide))] ==
                 wide.df[, order(names(wide.df))]))
 }
 

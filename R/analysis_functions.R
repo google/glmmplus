@@ -391,12 +391,12 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   library(parallel)
   if (length(random.terms) == 0) {
     library(splines)
-    analysis.list <- mclapply(c(1:m),
+    analysis.list <- lapply(c(1:m),
                               function(i){
                                 library(splines)
                                 glm(formula = formula, data = complete(mids, i),
-                                    family = family)},
-                              mc.cores = 5)
+                                    family = family)})
+                     
   } else {
     cl <- makeCluster(getOption("cl.cores", 5))
     if (family()$family == "gaussian") {
