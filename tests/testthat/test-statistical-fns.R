@@ -117,7 +117,7 @@ test_that("Backward elimination works as expected", {
   expect_equal(sort(names(glm.impute$qbar[-1])), c("w", "x"))
 
   glm.impute <- BackwardEliminate(y.binary ~ x + w + z, test.mids,
-                                  family = binomial)
+                                  family = binomial, cutoff = .10)
   expect_equal(sort(names(glm.impute$qbar[-1])), c("w", "x"))
   rm(glm.impute)
 
