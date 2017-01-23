@@ -1,20 +1,23 @@
 Package: glmmplus
-Date: 2014-07-02
-Title: Multiple Imputation and Model Selection
+Date: 2017-01-22
+Title: Tools for fitting generalized linear (mixed) models
 Description: Model selection tools for generalized linear (mixed) models
-             with accomidations for missing data.
-Version: 0.90  
-Author: Ben Ogorek <baogorek@google.com>,
-        Caitlin Hogan <caitlinh@google.com>,
-Maintainer: Ben Ogorek <baogorek@google.com>
+    with accomidations for missing data.
+Version: 0.91
+Author: Ben Ogorek <baogorek@gmail.com>,
+    Caitlin Hogan <caitlinh@google.com>,
+Maintainer: Ben Ogorek <baogorek@gmail.com>
+LazyData: yes
+License: Apache + file LICENSE
 URL: https://github.com/google/glmmplus
 BugReports: https://github.com/google/glmmplus/issues
 Imports:
-  splines,
-  lme4,
-  mice,
-  mvtnorm,
-  nlme
+    splines,
+    lme4,
+    mice,
+    mvtnorm,
+    nlme
 Suggests:
-  testthat
-
+    testthat,
+    covr
+RoxygenNote: 5.0.1
