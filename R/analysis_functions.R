@@ -398,7 +398,6 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
                                     family = family)})
                      
   } else {
-    cl <- makeCluster(getOption("cl.cores", 5))
     if (family()$family == "gaussian") {
       # Handle Gaussian ts models
       if (!is.null(ts.model)) {
@@ -414,7 +413,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
         if (ts.model == "ar1") {
           library(nlme)
           library(splines)
-          analysis.list <- parLapply(cl, c(1:m), function(i) {
+          analysis.list <- lapply(c(1:m), function(i) {
                            library(nlme)
                            library(splines)
                            return(lme(fixed.formula, data = complete(mids, i),
@@ -428,7 +427,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
       # Handle Gaussian non-ts models 
         library(lme4)
         library(splines)
-        analysis.list <- parLapply(cl, c(1:m),
+        analysis.list <- lapply(c(1:m),
                                function(i) {
                                  library(lme4)
                                  library(splines)
@@ -442,7 +441,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
         }
         library(lme4)
         library(splines)
-        analysis.list <- parLapply(cl, c(1:m),
+        analysis.list <- lapply(c(1:m),
                                function(i){
                                  library(lme4)
                                  library(splines)
@@ -451,7 +450,6 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
                                         family = family))
                                 })
      }
-    stopCluster(cl)
   }
   mat.list <- list()
   coef.list <- list()

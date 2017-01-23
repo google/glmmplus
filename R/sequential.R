@@ -116,9 +116,8 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
     i <- i + 1
     if (type == "backward") {
       form <- CreateFormula(response, iteration.terms, random.terms)
-      test.model <- current.model <- GetEstimates(data, form, family,
-                                                  null.model, random.terms,
-                                                  ts.model)
+      test.model <- current.model <-
+        GetEstimates(data, form, family, null.model, random.terms, ts.model)
     }
     p.values <- c()
     if (verbose) {
@@ -126,25 +125,14 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
       cat("Testing individual terms...\n--------\n")
     }
     for (var in iteration.terms) {
-      if (type == "forward") {  # fit model for each variable
-        form <- CreateFormula(response, union(model.terms, var), random.terms)
-        test.model <- GetEstimates(data, form, family, null.model, random.terms,
-                                   ts.model)
-      }
+      form <- CreateFormula(response, union(model.terms, var), random.terms)
+      test.model <- GetEstimates(data, form, family, null.model, random.terms,
+                                 ts.model)
       test.coefs <- GetCoefNames(var, complete(data))
       new.pvalue <- tryCatch(GetWaldPValue(test.model, test.coefs),
                              error = function(e) {
-                               bad.p <- 999
-                               if (type == "backward") bad.p <- -999
-                               return(bad.p)
-                             })
+                               ifelse(type == "backward", -999, 999)})
       term.coef.map[[var]] <- test.coefs
-      if (new.pvalue < cutoff) {
-        test.model <- current.model <- GetEstimates(data, form, family,
-                                                    null.model, random.terms,
-                                                    ts.model)
-
-      }
       p.values <- c(p.values, new.pvalue)
       if (verbose) {
         cat("var: ", var, ", pvalue: ", sprintf("%.4f", new.pvalue), " \n")

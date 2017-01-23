@@ -8,7 +8,7 @@ Author: Ben Ogorek <baogorek@gmail.com>,
     Caitlin Hogan <caitlinh@google.com>,
 Maintainer: Ben Ogorek <baogorek@gmail.com>
 LazyData: yes
-License: Apache + file LICENSE
+License: Apache License 2.0 | file LICENSE
 URL: https://github.com/google/glmmplus
 BugReports: https://github.com/google/glmmplus/issues
 Imports:
