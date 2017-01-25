@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#' @importFrom mice complete 
+
+
 ImputeData <- function(data, m = 10, maxit = 15, droplist = NULL) {
   if (length(intersect(names(data), droplist)) < length(droplist)) {
     stop("Droplist variables not found in data set")

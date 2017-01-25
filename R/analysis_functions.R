@@ -43,21 +43,22 @@ vcov2.merMod <- function(object, ...) {
   return(var.mat)
 }
 
-# Creating S3 generic function complete
+#' @export
 complete <- function(df, ...) UseMethod('complete', df)
-# compete is the identity function for data.frame inputs
+#' @export
 complete.data.frame <- function(df, i = 1) df
-# complete is the mice's complete function for mids objects
+#' @export
 complete.mids <- function(df, i = 1) mice:::complete(df, i)
 
-# The coef function for gfo objects is just a getter for the qbar element
+#' @export
 coef.gfo <- function(obj) obj$qbar
 
+#' Standardized Coefficients 
+#'
+#' Computes the standardized coefficients from a gfo object
+#'
+#' @export
 scoef <- function(obj) {
-  # Computes standardized coefficients of a gfo object
-  # Args:
-  #  obj: a gfo object
-  #
   #  Returns: numerical vector of standardized coefficients
   response <- all.vars(obj$formula)[1]
   cont.preds <- intersect(names(obj$sd.vars), names(coef(obj)))
@@ -70,26 +71,23 @@ scoef <- function(obj) {
   return(result)
 }
 
+#' @export
 vcov.gfo <- function(obj) {
-  # Computes the Rubin's Rules-adjusted vaariance matrix of a gfo object
-  # that provides row and column names
-  # Args:
-  #  obj: a gfo object
-  #
-  #  Returns: a dense variance matrix
-  var.mat <- with(obj, ubar + (1 + 1 / m) * b)
-  return(var.mat)
+  with(obj, ubar + (1 + 1 / m) * b)
 }
 
-predict.gfo <- function(obj, newdata, type = "response") {
-  # prediction function for a generalized fitted object
-  #
-  # Args:
-  #  obj: a gfo object
-  #  newdata: either a data.frame or a mids (multiply imputed data set) object
-  #  type: TODO: this is not hooked up yet
-  #
-  #  Returns: numerical vector of fitted response values
+
+#' predict.gfo
+#' 
+#' Prediction function for a generalized fitted object from glmmplus package
+#'
+#' @param obj A gfo object
+#' @param newdata either a data.frame or a mids (multiply imputed data set) object
+#' 
+#' @return numerical vector of fitted response values
+#'
+#' @export
+predict.gfo <- function(obj, newdata) {
   outer.pred.list <- list()
   test.m <- 1
   if (class(newdata) == "mids") test.m <- newdata$m
@@ -106,10 +104,8 @@ predict.gfo <- function(obj, newdata, type = "response") {
   return(pred)
 }
 
+#' @export
 print.gfo <- function(obj) {
-  # Printing function for a generalized fitted object (gfo)
-  # Args:
-  #  obj: a gfo object
   cat("Generalized Fitted Object 'gfo'\n\n")
   display.formula <- paste(deparse(obj$formula), collapse = " ")
   display.formula <- gsub("\\s+", " ", display.formula)
@@ -120,9 +116,8 @@ print.gfo <- function(obj) {
   }
 }
 
+#' @export
 plotFSR <- function(gfo) {
-  # Plot how the False Selection Rate changes during the selection techniqu
-  # TODO (baogorek): need a stop() for when variable selection was not used
   term <- c()
   formula <- c()
   fsr <- c()
@@ -261,15 +256,46 @@ CollectModelQuantities <- function(fit, data, null.model) {
   return(obj)
 }
 
+#' Forward Selection for Generalized (Mixed) Linear Models with Missing Data
+#' 
+#' Creates a generalized fitted object.
+#' 
+#' @param formula A formula which may contain random effects according to the
+#'                lme4 package's specification.
+#' @param data Either a mids object from the mice package, or a data frame.
+#' @param family Any family accepted by glm or lmer. Do not use quotation marks.
+#' 
+#' @examples
+#' data(testdata)
+#' 
+#' # A sample data set with testdata values
+#' head(testdata)
+#' 
+#' # creating a Muliply Imputed Data Set (mids) object
+#' mids <- ImputeData(testdata, m = 5, maxit = 5)
+#' 
+#' # a single imputation
+#' complete <- complete(mids)
+#' 
+#' # Backwards elimination for fixed effect models
+#' FitModel(y ~ x + w + z, data = complete)
+#' FitModel(y ~ x + w + z, data = mids)
+#' 
+#' # Backwards elimination for mixed (fixed and random) models
+#' FitModel(y ~ (1 | factor.1) + x + w + z, data = complete)
+#' FitModel(y ~ (1 | factor.1) + x + w + z, data = mids)
+# 
+#' @references
+#' Douglas Bates and Martin Maechler (2010).
+#'   lme4: Linear mixed-effects models using S4 classes. R package
+#'  version 0.999375-37. http://CRAN.R-project.org/package=lme4
+#' 
+#' Stef van Buuren, Karin Groothuis-Oudshoorn (2011).
+#' mice: Multivariate Imputation by Chained Equations in R. Journal of
+#' Statistical Software, 45(3), 1-67. URL http://www.jstatsoft.org/v45/i03/.
+#' 
+#' @export 
 FitModel <- function(formula, data, family = gaussian, ts.model = NULL) {
-  # Fits model with, optionally, missing data and random effects
-  #
-  # Args:
-  #  formula: a formula with optionally contains random effects
-  #  data: a data.frame or mids object
-  #  family: the family functions in R
-  #
-  # Returns: a gfo model object
   gfo <- BackwardEliminate(formula, data, 1, family, ts.model, verbose = FALSE)
   gfo$var.select.type <- "none"
   gfo$var.select.cutoff <- NA
