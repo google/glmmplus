@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 GetFastFSR <- function(n.total.vars, n.model.vars, alpha, verbose = FALSE) {
   # Compute Fast FSR estimate from
   # http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2748177/
@@ -149,7 +148,6 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
   #  ts.model:
   #
   # Returns: a gfo model object
-  library(splines)
   all.terms <- attributes(terms(formula))$term.labels
   fixed.terms <- all.terms[!grepl("\\|", all.terms)]
   random.terms <- all.terms[grepl("\\|", all.terms)]

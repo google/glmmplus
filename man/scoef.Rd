@@ -2,11 +2,11 @@
 % Please edit documentation in R/analysis_functions.R
 \name{scoef}
 \alias{scoef}
-\title{rdfile coef}
+\title{Standardized Coefficients}
 \usage{
 scoef(obj)
 }
 \description{
-rdfile coef
+Computes the standardized coefficients from a gfo object
 }
 

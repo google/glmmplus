@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#' @importFrom lme4 glmer lmer ranef fixef vcov.merMod
+#' @importFrom nlme lme
+#' @importFrom splines ns
+NULL
+
 coef2 <- function(object, ...) UseMethod('coef2', object)
 coef2.glm <- function(object, ...) coef(object)
 coef2.merMod <- function(object, ...) {
@@ -45,8 +50,10 @@ vcov2.merMod <- function(object, ...) {
 
 #' @export
 complete <- function(df, ...) UseMethod('complete', df)
+
 #' @export
 complete.data.frame <- function(df, i = 1) df
+
 #' @export
 complete.mids <- function(df, i = 1) mice:::complete(df, i)
 
@@ -144,6 +151,7 @@ plotFSR <- function(gfo) {
   mtext(message, 2, col = "black", padj = -13.5, cex = 1.2, font = 3)
 }
 
+#' @export
 summary.gfo <- function(obj) {
   # Summary function for a generalized fitted object (gfo)
   # Args:
@@ -176,7 +184,6 @@ summary.gfo <- function(obj) {
     for (i in 1:obj$m) {
       if (class(obj$fitted[[i]]) == "lme") {
         nlme.flag <- TRUE
-        library(nlme)
         var.comps[[i]] <- c(getVarCov(obj$fitted.list[[i]]),
                             obj$fitted.list[[i]]$sigma^2)
         # TODO un-hard code subject
@@ -347,20 +354,16 @@ GetEstimates.data.frame <- function(data, formula, family, null.model,
   #
   #  Returns: a gfo S3 object
   if (length(random.terms) == 0) {
-    library(splines)
     model.fit <- glm(formula = formula, family = family(), data = data)
     if (!is.null(ts.model)) {
       stop("Implement subject-specific random effect to use ts.model")
     }
   } else {
-    library(lme4)
-    library(splines)
     if (family()$family == "gaussian") {
       if (!is.null(ts.model)) {
         if (length(random.terms) > 1) {
           stop("Only one random term is allowed for use with ts.model")
         }
-        library(nlme)
         # TODO: fix D.R.Y. violation (sequential.R)
         all.terms <- attributes(terms(formula))$term.labels
         fixed.terms <- all.terms[!grepl("\\|", all.terms)]
@@ -414,12 +417,9 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   #
   #  Returns: a gfo S3 object
   m <- mids$m
-  library(parallel)
   if (length(random.terms) == 0) {
-    library(splines)
     analysis.list <- lapply(c(1:m),
                               function(i){
-                                library(splines)
                                 glm(formula = formula, data = complete(mids, i),
                                     family = family)})
                      
@@ -437,11 +437,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
                                 paste(fixed.terms, collapse = "+")))
         random.formula <- as.formula(paste0("~", random.terms[1])) 
         if (ts.model == "ar1") {
-          library(nlme)
-          library(splines)
           analysis.list <- lapply(c(1:m), function(i) {
-                           library(nlme)
-                           library(splines)
                            return(lme(fixed.formula, data = complete(mids, i),
                                       random = random.formula,
                                       cor = corAR1(0.5, form = random.formula)))
@@ -451,26 +447,18 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
         }
       } else {
       # Handle Gaussian non-ts models 
-        library(lme4)
-        library(splines)
         analysis.list <- lapply(c(1:m),
                                function(i) {
-                                 library(lme4)
-                                 library(splines)
                                  return(lmer(formula = formula,
                                              data = complete(mids, i)))})
       }
     } else {
        # Handle non-Gaussian random effects models 
         if (!is.null(ts.model)) {
-               stop("Sorry, within-subject time series only available for gaussian")
+               stop("Within-subject time series only available for gaussian")
         }
-        library(lme4)
-        library(splines)
         analysis.list <- lapply(c(1:m),
                                function(i){
-                                 library(lme4)
-                                 library(splines)
                                  return(glmer(formula = formula,
                                         data = complete(mids, i),
                                         family = family))

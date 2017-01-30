@@ -169,7 +169,6 @@ MakeSplineStr <- function(var.name, data, interior.knots) {
   #  var.name: the variable name of the independent variable
   #  data: a data.frame
   #  interior.knots: a numeric vector of parametric spline knots
-  library(splines)
   str.1 <- paste0("ns(", var.name, ", knots = c(")
   str.2 <- paste(interior.knots, collapse = ", ")
   str.3 <- "), Boundary.knots = c("
@@ -197,7 +196,59 @@ CreateFormula <- function(response, predictors, random.terms = character(0)) {
   return(formula(formula.str))
 }
 
+#' WideToLong: Converting from wide to long formats
+#'
+#' In longitudinal or other multiple response studies, data presented in a long
+#' format will often feature dependence between rows. While this is the
+#' preferred format for lme4, such a format would hide important information
+#' from multiple imputation models and make the MAR assumption less plausible.
+#' Hense, the suggestion is to impute data in a wide format, where rows are
+#' again independent, and then return the mids object to a long format for use
+#' with FitModel, ForwardSelect, or BackwardEliminate.
+#'
+#'
+#' @param data A data frame or mids object in "wide" format. Specifically, both
+#'             the response and any time varying covariates should be specified
+#'             as multiple columns with the same base name, but a different
+#'             suffix. The suffix values will be the future period labels.
+#'  
+#' @param id.name The name of the identifying variable, a character string.
+#'  
+#' @param response The common prefix for the response variable, a character
+#'                 string.
+#' @param time.varying.bases A character vector of name prefixes for
+#'        time-varying covariates.
+#' @param sep The character delimiter separating the variable name base from
+#'        the period identifier.
+#' 
+#' @seealso \code{\link{LongToWide}}
+#' @examples
+#' wide.df <- data.frame(pid           = 1:100,
+#'                       my.response.1 = rnorm(100),
+#'                       my.response.2 = rnorm(100),
+#'                       x.1           = rnorm(100),
+#'                       x.2           = rnorm(100))
+#' # add missingness
+#' 
+#' wide.df[25:50, "my.response.2"] <- NA
+#' wide.df[45:55, "x.1"] <- NA
+#' 
+#' wide.mids <- ImputeData(wide.df, droplist = c("pid"))
+#' long.mids <- WideToLong(wide.mids, "pid", "my.response", c("x"), sep = ".")
+#' 
+#' my.model <- FitModel(my.response ~ (1 | pid) + x, data = long.mids)
+#' summary(my.model)
+#' @references
+#' Stef van Buuren, Karin Groothuis-Oudshoorn (2011).
+#' mice: Multivariate Imputation by Chained Equations in R. Journal of
+#'       Statistical Software, 45(3), 1-67. URL
+#'       http://www.jstatsoft.org/v45/i03/.
+#'
+#' @export
 WideToLong <- function(object, ...) UseMethod('WideToLong', object)
+
+#' @rdname WideToLong 
+#' @export
 WideToLong.data.frame <- function(data, id.name, response.base,
                                   time.varying.bases = NULL, sep = ".") {
 
@@ -228,22 +279,25 @@ WideToLong.data.frame <- function(data, id.name, response.base,
   return (long.df)
 }
 
-
 #' LongToWide: Convert nested long structures to wide multivariate structures
 #'
-#' In longitudinal or other multiple response studies, data presented in a long format
-#' will often feature dependence between rows. While this is the preferred format for lme4, such a
-#' format would hide important information from multiple imputation models and make the MAR assumption
-#' less plausible. Hense, the suggestion is to impute data in a wide format, where rows are again independent,
-#' and then return the mids object to a long format for use with FitModel, ForwardSelect, or BackwardEliminate.
+#' In longitudinal or other multiple response studies, data presented in a long
+#' format will often feature dependence between rows. While this is the
+#' preferred format for lme4, such a format would hide important information
+#' from multiple imputation models and make the MAR assumption less plausible.
+#' Hense, the suggestion is to impute data in a wide format, where rows are
+#' again independent and then return the mids object to a long format for use
+#' with FitModel, ForwardSelect, or BackwardEliminate.
 #' 
-#' @param data A data frame or mids object in "long" format owing to multiple measurements
-#'     within the same subject.
+#' @param data A data frame or mids object in "long" format owing to multiple
+#'             measurements within the same subject.
 #' @param id.name The subject id, a character string.
-#' @param period.name The repeated measurement (within subject) identifier. In a longitudinal study, this will be time.
+#' @param period.name The repeated measurement (within subject) identifier.
+#'                    In a longitudinal study, this will be time.
 #' @param time.varying.vars A character vector of variable names that take
 #'        multiple values per subject (in different rows)
-#' @param  sep The character delimiter by which to separate the variable name base from the period identifier.
+#' @param  sep The character delimiter by which to separate the variable name
+#'             base from the period identifier.
 #' 
 #' @seealso \code{\link{WideToLong}}
 #' 
@@ -262,8 +316,9 @@ WideToLong.data.frame <- function(data, id.name, response.base,
 #' 
 #' @references
 #' Stef van Buuren, Karin Groothuis-Oudshoorn (2011).
-#' mice: Multivariate Imputation by Chained Equations in R. Journal of Statistical Software, 45(3), 1-67. URL
-#'            http://www.jstatsoft.org/v45/i03/.
+#' mice: Multivariate Imputation by Chained Equations in R.
+#'       Journal of Statistical Software, 45(3), 1-67. URL
+#'       http://www.jstatsoft.org/v45/i03/.
 #' @export
 LongToWide <- function(object, ...) UseMethod('LongToWide', object)
 
@@ -271,16 +326,6 @@ LongToWide <- function(object, ...) UseMethod('LongToWide', object)
 #' @export
 LongToWide.data.frame <- function(data, id.name, period.name,
                                   time.varying.vars, sep = ".") {
-  # Transforms a data set with nested long structure into wide structure
-  #
-  # Args:
-  #   data: a data frame with multiple measurements on a subject
-  #   id.name: the subject identifier
-  #   period.name: The repeated measurement identifier
-  #   time.varying.vars: variables that take multiple values within subject
-  #   sep: The separator that will be used between the measurement and period
-  
-  # Sort data by id, period
   data <- data[order(data[, id.name], data[, period.name]), ]
   stable.vars <- setdiff(names(data), c(period.name, time.varying.vars))
   if (length(stable.vars) == 1) {
@@ -300,4 +345,3 @@ LongToWide.data.frame <- function(data, id.name, period.name,
   }
   return(wide.df)
 }
-

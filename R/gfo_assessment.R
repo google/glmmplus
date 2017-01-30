@@ -11,32 +11,36 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 ############################################################
-# An R script containing functions for model interpretation,
-# assessment, and evaluation
 
-# TODO: make work for binary and gaussian responses
-# Idea: Cross Validation takes in a gfo object
+#' CrossValidate
+#'
+#' Cross validation for use with gfo objects
+#'
+#' @param k.folds Number of cross-validation folds
+#' @param granularity For binary classification, the step size from 0 to 1 in
+#'                    computing evaluation metrics like precision
+#' @param starter a list containing elements that allows restarting the
+#'                cross validation if at least one fold was completed.
+#'                Such a list is created at each iteration and placed in the
+#'                global environment. It is called "starter.pack"
+#' @param pre.test Whether to run the full model for every training split,
+#'                 to check for model stability before running a lengthy
+#'                 cross-validation run using backward elimination
+#' @details Currently set up for classification, binomial family and mids data
+#'          only!
+#' @return A gfo.cxv object containing relevant cv outputs
+#' @examples
+#' data(testdata)
+#' creating a Muliply Imputed Data Set (mids) object
+#' mids <- ImputeData(testdata, m = 5, maxit = 5)
+#' gfo <- BackwardEliminate(y ~ x + w + z, data = mids)
+#' cv <- CrossValidate(gfo)
+#'
+#' @export
 CrossValidate <- function(gfo, k.folds = 5, granularity = .005,
                           starter = list(), pre.test = FALSE) {
 
-  # Currently set up for classification, binomial family and mids data only!
-  #
-  # Args:
-  #   k.folds: Number of cross-validation folds
-  #   granularity: For binary classification, the step size from 0 to 1 in
-  #                computing evaluation metrics like precision
-  #   starter: a list containing elements that allows restarting the
-  #            cross validation if at least one fold was completed.
-  #            Such a list is created at each iteration and placed in the
-  #            global environment. It is called "starter.pack"
-  #   pre.test: Whether to run the full model for every training split,
-  #             to check for model stability before running a lengthy
-  #             cross-validation run using backward elimination
-  #
-  # Returns:
-  #  A gfo.cxv S3 object containing relevant outputs from the cross validation
   response <- all.vars(gfo$call.formula)[1]
   data <- gfo$data$data
 
@@ -140,16 +144,29 @@ CrossValidate <- function(gfo, k.folds = 5, granularity = .005,
   return(gfo.cxv)
 }
 
+#' GetVariableImpacts
+#'
+#' Computes model extrapolations when fixed effects are modulated
+#' 
+#' @param obj either a gfo.cxv (cross validation) or gfo object
+#' @param lower.quantile the starting quantile of each continuous predictor
+#' @param upper.quantile the ending quantile of each continuous predictor
+#' 
+#' @return A data frame of the predicted outcomes under the modulations
+#'
+#' @details
+#'Currently works with only a mids data object and family = binomial!
+#' @examples
+#' data(testdata)
+#' mids <- ImputeData(testdata, m = 5, maxit = 5)
+#' gfo <- BackwardEliminate(y ~ x + w + z, data = mids)
+#' cv <- CrossValidate(gfo)
+#' impact <- GetVariableImpacts(cv)
+#' impact
+#'
+#' @export
 GetVariableImpacts <- function(obj, lower.quantile = .05,
                                upper.quantile = .95) {
-  # Computes model extrapolations when fixed effects are modulated
-  #
-  # Args:
-  #  obj: either a gfo.cxv (cross validation) or gfo object
-  #  lower.quantile: the starting quantile of each continuous predictor
-  #  upper.quantile: the ending quantile of each continuous predictor
-  #
-  # Returns: A data frame of the predicted outcomes under the modulations
   impact.df <- data.frame()
   if (class(obj) == "gfo.cxv") {
     gfo <- obj[["gfo"]]
@@ -250,17 +267,33 @@ GetVariableImpacts <- function(obj, lower.quantile = .05,
   return(impact.df)
 }
 
-# idea: more manual, but you get what you want
+
+
+#' GetVariableGroupImpact: Model Implied Group Impact Analysis
+#'
+#' Shows how the predicted values of a model change as a set of variables
+#' simultaneously change in value.
+#' 
+#' @param gfo.obj A gfo object created by FitModel, BackwardEliminate, or
+#'                Forward Select
+#' 
+#' @param var.vec A character vector of variable names
+#' 
+#' @param low.val.list A list mapping each variable name (from var.vec) to its
+#'                    "low" value
+#' 
+#' @param high.val.list A list mapping each variable name (from var.vec) to its
+#'                     "high" value
+#' 
+#' @examples 
+#' data(testdata)
+#' gfo <- FitModel(y ~ x + w + z, data = testdata)
+#' GetVariableGroupImpact(gfo, var.vec = c("w", "x"),
+#'                        low.val.list = list(x = -1, w = -1),
+#'                        high.val.list = list(x = 1, w = 1))
+#'
+#' @export
 GetVariableGroupImpact <- function(obj, low.val.list, high.val.list) {
-  # Computes model extrapolations for a group of variables and prints output
-  #
-  # Args:
-  #  obj: a gfo object
-  #  low.val.list: a list with the names of the variables to be modulated and
-  #    thier starting values
-  #  high.val.list: a list with the names of the variables to be modulations
-  #    and thier ending values
-  #
   if (class(obj)[1] != "gfo") stop("Please supply a gfo object")
   if (class(obj$data)[1] == "data.frame") data <- obj$data
   if (class(obj$data)[1] == "mids") data <- complete(obj$data)

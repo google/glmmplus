@@ -11,24 +11,28 @@ LongToWide(object, ...)
   sep = ".")
 }
 \arguments{
-\item{data}{A data frame or mids object in "long" format owing to multiple measurements
-within the same subject.}
+\item{data}{A data frame or mids object in "long" format owing to multiple
+measurements within the same subject.}
 
 \item{id.name}{The subject id, a character string.}
 
-\item{period.name}{The repeated measurement (within subject) identifier. In a longitudinal study, this will be time.}
+\item{period.name}{The repeated measurement (within subject) identifier.
+In a longitudinal study, this will be time.}
 
 \item{time.varying.vars}{A character vector of variable names that take
 multiple values per subject (in different rows)}
 
-\item{sep}{The character delimiter by which to separate the variable name base from the period identifier.}
+\item{sep}{The character delimiter by which to separate the variable name
+base from the period identifier.}
 }
 \description{
-In longitudinal or other multiple response studies, data presented in a long format
-will often feature dependence between rows. While this is the preferred format for lme4, such a
-format would hide important information from multiple imputation models and make the MAR assumption
-less plausible. Hense, the suggestion is to impute data in a wide format, where rows are again independent,
-and then return the mids object to a long format for use with FitModel, ForwardSelect, or BackwardEliminate.
+In longitudinal or other multiple response studies, data presented in a long
+format will often feature dependence between rows. While this is the
+preferred format for lme4, such a format would hide important information
+from multiple imputation models and make the MAR assumption less plausible.
+Hense, the suggestion is to impute data in a wide format, where rows are
+again independent and then return the mids object to a long format for use
+with FitModel, ForwardSelect, or BackwardEliminate.
 }
 \examples{
 # Example of the long-to-wide, impute, wide-to-long strategy
@@ -46,8 +50,9 @@ mids.long <- WideToLong(mids, "PUBID.1997", "math.cs")
 }
 \references{
 Stef van Buuren, Karin Groothuis-Oudshoorn (2011).
-mice: Multivariate Imputation by Chained Equations in R. Journal of Statistical Software, 45(3), 1-67. URL
-           http://www.jstatsoft.org/v45/i03/.
+mice: Multivariate Imputation by Chained Equations in R.
+      Journal of Statistical Software, 45(3), 1-67. URL
+      http://www.jstatsoft.org/v45/i03/.
 }
 \seealso{
 \code{\link{WideToLong}}

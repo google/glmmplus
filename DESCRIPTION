@@ -11,6 +11,8 @@ LazyData: yes
 License: Apache License 2.0 | file LICENSE
 URL: https://github.com/google/glmmplus
 BugReports: https://github.com/google/glmmplus/issues
+Depends:
+    R (>= 3.1.2)
 Imports:
     splines,
     lme4,

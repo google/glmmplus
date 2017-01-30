@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#' @importFrom mice complete 
+#' @importFrom mice mice
+#' @export
+mice::mice
 
-
+#' @export
 ImputeData <- function(data, m = 10, maxit = 15, droplist = NULL) {
   if (length(intersect(names(data), droplist)) < length(droplist)) {
     stop("Droplist variables not found in data set")
@@ -30,7 +32,8 @@ ImputeData <- function(data, m = 10, maxit = 15, droplist = NULL) {
   return(mids.out)
 }
 
-WideToLong <- function(object, ...) UseMethod('WideToLong', object)
+#' @rdname WideToLong
+#' @export
 WideToLong.mids <- function(wide.mids, id.name, response.base,
                             time.varying.bases = NULL, sep = ".") {
 
@@ -59,6 +62,7 @@ WideToLong.mids <- function(wide.mids, id.name, response.base,
   return(long.mids)
 }
 
+#' @export
 `[.mids` <- function(obj, first, second) {
   # Row level subsetting of a mids object
   #
@@ -84,21 +88,3 @@ WideToLong.mids <- function(wide.mids, id.name, response.base,
   class(new.obj) <- "mids"
   return(new.obj);
 }
-
-# TODO: bring this back. Add in plot(mice).
-# Also, if I can't serve it, would rather have pdf and html
-#CreateImputationReport <- function(x.df, imputation.fn, out.path){
-#  # Create a report of the data set variables and the imputation
-#  library(knitr)
-#
-#  x.df.imp <- imputation.fn(x.df)
-#  x.df.complete  <- complete(x.df.imp, 1)
-#
-#  knit2html("reports/imputations.Rmd")
-#  # move the file to the user specified directory
-#  file.rename("imputations.html",out.path)
-#  # clean up
-#  unlink("imputations.md")
-#  unlink("figure", recursive=TRUE)
-#}
-
