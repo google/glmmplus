@@ -32,7 +32,7 @@
 #' @return A gfo.cxv object containing relevant cv outputs
 #' @examples
 #' data(testdata)
-#' creating a Muliply Imputed Data Set (mids) object
+#' # creating a Muliply Imputed Data Set (mids) object
 #' mids <- ImputeData(testdata, m = 5, maxit = 5)
 #' gfo <- BackwardEliminate(y ~ x + w + z, data = mids)
 #' cv <- CrossValidate(gfo)

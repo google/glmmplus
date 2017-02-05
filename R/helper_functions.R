@@ -162,13 +162,8 @@ RemoveRandomEffectVars <- function(var.vec) {
  return(trim(non.random.terms))
 }
 
+#' @export
 MakeSplineStr <- function(var.name, data, interior.knots) {
-  # Creates an ns function string designed for reuse on future data sets
-  #
-  # Args:
-  #  var.name: the variable name of the independent variable
-  #  data: a data.frame
-  #  interior.knots: a numeric vector of parametric spline knots
   str.1 <- paste0("ns(", var.name, ", knots = c(")
   str.2 <- paste(interior.knots, collapse = ", ")
   str.3 <- "), Boundary.knots = c("
@@ -176,7 +171,7 @@ MakeSplineStr <- function(var.name, data, interior.knots) {
   return(paste0(str.1, str.2, str.3, str.4, "))"))
 }
 
-# TODO: Make this work for more complicated random effect situations
+#' export
 CreateFormula <- function(response, predictors, random.terms = character(0)) {
   # Creates a formula based on terms passed in as arguments
   #

@@ -235,7 +235,6 @@ RunSelectionCore <- function(var.select.type, iteration, iteration.terms,
                              p.values,
                              weak.term.queue, cutoff, verbose,
                              fixed.terms, model.terms, continue) {
-  ## TODO: find out what this design pattern is called, or find better one
   if (var.select.type == "forward") {
     return(ForwardSelectCore(iteration, iteration.terms, p.values,
                              weak.term.queue, cutoff, verbose,

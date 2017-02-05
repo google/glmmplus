@@ -12,9 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#' @importFrom lme4 glmer lmer ranef fixef vcov.merMod
+#' @importFrom lme4 glmer lmer ranef fixef vcov.merMod formatVC
 #' @importFrom nlme lme
 #' @importFrom splines ns
+#' @importFrom graphics arrows barplot mtext par text
+#' @importFrom stats as.formula coef contrasts family formula gaussian glm
+#' @importFrom stats logLik pchisq pf predict quantile sd terms var vcov
+
 NULL
 
 coef2 <- function(object, ...) UseMethod('coef2', object)
@@ -49,13 +53,17 @@ vcov2.merMod <- function(object, ...) {
 }
 
 #' @export
-complete <- function(df, ...) UseMethod('complete', df)
+complete <- function(df, ...) {
+  UseMethod('complete', df)
+}
 
 #' @export
 complete.data.frame <- function(df, i = 1) df
 
 #' @export
-complete.mids <- function(df, i = 1) mice:::complete(df, i)
+complete.mids <- function(df, i = 1) {
+  complete(df, i)
+}
 
 #' @export
 coef.gfo <- function(obj) obj$qbar
@@ -195,11 +203,11 @@ summary.gfo <- function(obj) {
         # Changing class to corAR1
         #class(cor.struct) <- attr(cor.struct, "oClass")
         #print(as.numeric(coef(cor.struct, unconstrained = FALSE)))
-        ar.parm <- nlme:::coef.corAR1(cor.struct, unconstrained = FALSE)
+        ar.parm <- coef.corAR1(cor.struct, unconstrained = FALSE)
         ar.vec <- c(ar.vec, ar.parm)
       } else {
         # var.corr contains names that do not change with i
-        var.corr <- lme4:::formatVC(VarCorr(obj$fitted.list[[i]]))
+        var.corr <- formatVC(VarCorr(obj$fitted.list[[i]]))
         var.comps[[i]] <- (as.numeric(var.corr[, "Std.Dev."]))^2
       }
     }
