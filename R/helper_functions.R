@@ -171,24 +171,25 @@ MakeSplineStr <- function(var.name, data, interior.knots) {
   return(paste0(str.1, str.2, str.3, str.4, "))"))
 }
 
-#' export
+#' Formula creation from string arguments
+#'
+#'  @param reponse the response variable's name
+#'  @param predictors a character vector of predictor names
+#'  @param random.terms a character vector of random terms as they are presented in
+#'                terms(formula)
+#'
+#' @export
 CreateFormula <- function(response, predictors, random.terms = character(0)) {
-  # Creates a formula based on terms passed in as arguments
-  #
-  # Args:
-  #  reponse: the response variable's name
-  #  predictors: a character vector of predictor names
-  #  random.terms: a character vector of random terms as they are presented in
-  #                terms(formula)
-  #
-  # Returns: a formula
-  if (length(predictors) == 0) predictors <- "1"
+  if (length(predictors) == 0) {
+    predictors <- "1"
+  }
   random.part <- ifelse(length(random.terms) == 0, "",
                         paste0("(", paste(random.terms, collapse = ") + ("),
                                ") + "))
   fixed.part <- paste(predictors, collapse = "+")
   formula.str <- paste(response, "~", random.part, fixed.part)
-  return(formula(formula.str))
+  new.formula <- as.formula(formula.str)
+  return(new.formula)
 }
 
 #' WideToLong: Converting from wide to long formats

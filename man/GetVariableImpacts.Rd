@@ -7,7 +7,7 @@
 GetVariableImpacts(obj, lower.quantile = 0.05, upper.quantile = 0.95)
 }
 \arguments{
-\item{obj}{either a gfo.cxv (cross validation) or gfo object}
+\item{obj}{a gfo object}
 
 \item{lower.quantile}{the starting quantile of each continuous predictor}
 
@@ -19,16 +19,10 @@ A data frame of the predicted outcomes under the modulations
 \description{
 Computes model extrapolations when fixed effects are modulated
 }
-\details{
-Currently works with only a mids data object and family = binomial!
-}
 \examples{
-data(testdata)
-mids <- ImputeData(testdata, m = 5, maxit = 5)
-gfo <- BackwardEliminate(y ~ x + w + z, data = mids)
-cv <- CrossValidate(gfo)
-impact <- GetVariableImpacts(cv)
-impact
+my.mids <- ImputeData(testdata, m = 5, maxit = 5)
+my.gfo <- BackwardEliminate(y ~ x + w + z, data = my.mids)
+GetVariableImpacts(my.gfo)
 
 }
 

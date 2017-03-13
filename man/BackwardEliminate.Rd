@@ -27,24 +27,22 @@ This is a backwards elimination procedure for generic procedures that
 ouput p-values
 }
 \examples{
-data(testdata)
-
 # A sample data set with testdata values
 head(testdata)
 
 # creating a Muliply Imputed Data Set (mids) object
-mids <- ImputeData(testdata, m = 5, maxit = 5)
+my.mids <- ImputeData(testdata, m = 5, maxit = 5)
 
 # a single imputation
-complete <- complete(mids)
+complete1 <- complete(my.mids)
 
 # Backwards elimination for fixed effect models
-BackwardEliminate(y ~ x + w + z, data = complete)
-BackwardEliminate(y ~ x + w + z, data = mids)
+BackwardEliminate(y ~ x + w + z, data = complete1)
+BackwardEliminate(y ~ x + w + z, data = my.mids)
 
 # Backwards elimination for mixed (fixed and random) models
-BackwardEliminate(y ~ (1 | factor.1) + x + w + z, data = complete)
-BackwardEliminate(y ~ (1 | factor.1) + x + w + z, data = mids)
+BackwardEliminate(y ~ (1 | factor.1) + x + w + z, data = complete1)
+BackwardEliminate(y ~ (1 | factor.1) + x + w + z, data = my.mids)
 
 }
 \references{

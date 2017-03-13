@@ -62,7 +62,7 @@ complete.data.frame <- function(df, i = 1) df
 
 #' @export
 complete.mids <- function(df, i = 1) {
-  complete(df, i)
+  mice::complete(df, i)
 }
 
 #' @export
@@ -281,24 +281,22 @@ CollectModelQuantities <- function(fit, data, null.model) {
 #' @param family Any family accepted by glm or lmer. Do not use quotation marks.
 #' 
 #' @examples
-#' data(testdata)
-#' 
 #' # A sample data set with testdata values
 #' head(testdata)
 #' 
 #' # creating a Muliply Imputed Data Set (mids) object
-#' mids <- ImputeData(testdata, m = 5, maxit = 5)
+#' my.mids <- ImputeData(testdata, m = 5, maxit = 5)
 #' 
 #' # a single imputation
-#' complete <- complete(mids)
+#' complete1 <- complete(my.mids)
 #' 
 #' # Backwards elimination for fixed effect models
-#' FitModel(y ~ x + w + z, data = complete)
-#' FitModel(y ~ x + w + z, data = mids)
+#' FitModel(y ~ x + w + z, data = complete1)
+#' FitModel(y ~ x + w + z, data = my.mids)
 #' 
 #' # Backwards elimination for mixed (fixed and random) models
-#' FitModel(y ~ (1 | factor.1) + x + w + z, data = complete)
-#' FitModel(y ~ (1 | factor.1) + x + w + z, data = mids)
+#' FitModel(y ~ (1 | factor.1) + x + w + z, data = complete1)
+#' FitModel(y ~ (1 | factor.1) + x + w + z, data = my.mids)
 # 
 #' @references
 #' Douglas Bates and Martin Maechler (2010).

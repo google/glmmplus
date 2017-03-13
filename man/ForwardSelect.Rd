@@ -24,24 +24,22 @@ marks.}
 Selection for Generalized (Mixed) Linear Models with Missing Data
 }
 \examples{
-data(missing)
-
 # A sample data set with missing values
 head(missing)
 
 # creating a Muliply Imputed Data Set (mids) object
-mids <- ImputeData(missing, m = 5, maxit = 5)
+my.mids <- ImputeData(missing, m = 5, maxit = 5)
 
 # a single imputation
-complete <- complete(mids)
+complete1 <- complete(mids)
 
 # Backwards elimination for fixed effect models
-ForwardSelect(y ~ x + w + z, data = complete)
-ForwardSelect(y ~ x + w + z, data = mids)
+ForwardSelect(y ~ x + w + z, data = complete1)
+ForwardSelect(y ~ x + w + z, data = my.mids)
 
 # Backwards elimination for mixed (fixed and random) models
-ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = complete)
-ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = mids)
+ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = complete1)
+ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = my.mids)
 
 }
 \references{

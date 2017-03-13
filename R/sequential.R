@@ -48,24 +48,22 @@ GetFastFSR <- function(n.total.vars, n.model.vars, alpha, verbose = FALSE) {
 #' @return A gfo object
 #' 
 #' @examples
-#' data(testdata)
-#' 
 #' # A sample data set with testdata values
 #' head(testdata)
 #' 
 #' # creating a Muliply Imputed Data Set (mids) object
-#' mids <- ImputeData(testdata, m = 5, maxit = 5)
+#' my.mids <- ImputeData(testdata, m = 5, maxit = 5)
 #' 
 #' # a single imputation
-#' complete <- complete(mids)
+#' complete1 <- complete(my.mids)
 #' 
 #' # Backwards elimination for fixed effect models
-#' BackwardEliminate(y ~ x + w + z, data = complete)
-#' BackwardEliminate(y ~ x + w + z, data = mids)
+#' BackwardEliminate(y ~ x + w + z, data = complete1)
+#' BackwardEliminate(y ~ x + w + z, data = my.mids)
 #' 
 #' # Backwards elimination for mixed (fixed and random) models
-#' BackwardEliminate(y ~ (1 | factor.1) + x + w + z, data = complete)
-#' BackwardEliminate(y ~ (1 | factor.1) + x + w + z, data = mids)
+#' BackwardEliminate(y ~ (1 | factor.1) + x + w + z, data = complete1)
+#' BackwardEliminate(y ~ (1 | factor.1) + x + w + z, data = my.mids)
 #'
 #' @references
 #' Douglas Bates and Martin Maechler (2010). lme4: Linear mixed-effects models
@@ -98,24 +96,22 @@ BackwardEliminate <- function(formula, data, cutoff = .05,
 #'                 marks.
 #'
 #' @examples
-#' data(missing)
-#' 
 #' # A sample data set with missing values
 #' head(missing)
 #' 
 #' # creating a Muliply Imputed Data Set (mids) object
-#' mids <- ImputeData(missing, m = 5, maxit = 5)
+#' my.mids <- ImputeData(missing, m = 5, maxit = 5)
 #' 
 #' # a single imputation
-#' complete <- complete(mids)
+#' complete1 <- complete(mids)
 #' 
 #' # Backwards elimination for fixed effect models
-#' ForwardSelect(y ~ x + w + z, data = complete)
-#' ForwardSelect(y ~ x + w + z, data = mids)
+#' ForwardSelect(y ~ x + w + z, data = complete1)
+#' ForwardSelect(y ~ x + w + z, data = my.mids)
 #' 
 #' # Backwards elimination for mixed (fixed and random) models
-#' ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = complete)
-#' ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = mids)
+#' ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = complete1)
+#' ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = my.mids)
 #' 
 #' @references
 #' Douglas Bates and Martin Maechler (2010).
@@ -136,7 +132,8 @@ ForwardSelect <- function(formula, data, cutoff = .05, family = gaussian,
 }
 
 SequentiallyBuildModel <- function(formula, data, cutoff = .05,
-                                   family = gaussian, ts.model, type, verbose) {
+                                   family = gaussian, ts.model, type,
+                                   verbose = FALSE) {
   # Private function encaptulating the common logic of the stepwise procedures
   #
   # Args:
@@ -152,7 +149,12 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
   fixed.terms <- all.terms[!grepl("\\|", all.terms)]
   random.terms <- all.terms[grepl("\\|", all.terms)]
   response <- all.vars(formula)[1]
-  null.model <- glm(CreateFormula(response, 1), family, complete(data))
+
+  null.formula <- CreateFormula(response, 1)
+  complete1.data <- complete(data, 1)
+  null.model <- glm(formula = null.formula, family = family,
+                    data = complete1.data)
+
   iteration.terms <- fixed.terms
   term.coef.map <- list()
   history <- list()

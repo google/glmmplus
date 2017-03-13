@@ -23,11 +23,10 @@ Shows how the predicted values of a model change as a set of variables
 simultaneously change in value.
 }
 \examples{
-data(testdata)
-gfo <- FitModel(y ~ x + w + z, data = testdata)
-GetVariableGroupImpact(gfo, var.vec = c("w", "x"),
-                       low.val.list = list(x = -1, w = -1),
-                       high.val.list = list(x = 1, w = 1))
+my.gfo <- FitModel(y ~ x + w + z, data = testdata)
+group.impacts <- GetVariableGroupImpact(my.gfo,
+                                        low.val.list = list(x = -1, w = -1),
+                                        high.val.list = list(x = 1, w = 1))
 
 }
 

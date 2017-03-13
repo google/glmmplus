@@ -13,165 +13,26 @@
 # limitations under the License.
 ############################################################
 
-#' CrossValidate
-#'
-#' Cross validation for use with gfo objects
-#'
-#' @param k.folds Number of cross-validation folds
-#' @param granularity For binary classification, the step size from 0 to 1 in
-#'                    computing evaluation metrics like precision
-#' @param starter a list containing elements that allows restarting the
-#'                cross validation if at least one fold was completed.
-#'                Such a list is created at each iteration and placed in the
-#'                global environment. It is called "starter.pack"
-#' @param pre.test Whether to run the full model for every training split,
-#'                 to check for model stability before running a lengthy
-#'                 cross-validation run using backward elimination
-#' @details Currently set up for classification, binomial family and mids data
-#'          only!
-#' @return A gfo.cxv object containing relevant cv outputs
-#' @examples
-#' data(testdata)
-#' # creating a Muliply Imputed Data Set (mids) object
-#' mids <- ImputeData(testdata, m = 5, maxit = 5)
-#' gfo <- BackwardEliminate(y ~ x + w + z, data = mids)
-#' cv <- CrossValidate(gfo)
-#'
-#' @export
-CrossValidate <- function(gfo, k.folds = 5, granularity = .005,
-                          starter = list(), pre.test = FALSE) {
-
-  response <- all.vars(gfo$call.formula)[1]
-  data <- gfo$data$data
-
-  threshold.seq = seq(0, 1, granularity)
-  if (length(starter) == 0) {
-    split <- sample(1:k.folds, nrow(data), replace = TRUE)
-    model.list <- list()
-    min.redo.fold <- 1 # i.e., do them all
-    precision.list <- list()
-    accuracy.list <- list()
-    recall.list <- list()
-    complete.cases <- rep(0, length(threshold.seq))
-  } else {
-    model.list <- starter$model.list
-    # re-label splits that are not in the current model list
-    min.redo.fold <- min(k.folds - 1, length(model.list) + 1)
-    split <- RelabelSplits(starter$split, c(min.redo.fold:k.folds))
-    precision.list <- starter$precision.list
-    accuracy.list <- starter$accuracy.list
-    recall.list <- starter$recall.list
-    complete.cases <- starter$complete.cases
-  }
-  if (pre.test) {
-  # Optional pre-test that run the model on the full set of vars for each split
-    options(width = 200)
-    for (i in min.redo.fold:k.folds) {
-      if (i == 0) rm(starter.pack, envir = .GlobalEnv)
-      cat("##### Pre-test ", i, " of ", k.folds, " ######\n")
-      temp <- FitModel(gfo$call.formula, data = gfo$data[split != i, ],
-                       family = gfo$family)
-      summary(temp)
-    }
-    rm(temp)
-    check <- readline(prompt = "Check the runs for -999s. Continue? (y/n): ")
-    if (check %in% c("n", "N")) stop("Unstable sample runs. Try Rerunning")
-  }
-
-  for (i in min.redo.fold:k.folds) {
-    fold.str <- paste("\n########", "Fold", i, "of", k.folds, "#########\n")
-    print(fold.str)
-    train.df <- data[split != i, ]
-    if (class(gfo$data) == "mids") {
-      train.df <- mice(train.df, m = gfo$m, maxit = gfo$data$iteration,
-                       predictorMatrix = gfo$data$predictorMatrix)
-    }
-    fold.model <- SequentiallyBuildModel(gfo$call.formula, train.df,
-                                         gfo$var.select.cutoff, gfo$family,
-                                         type = gfo$var.select.type)
-    model.list[[i]] <- fold.model
-    print(fold.str)
-    test.df <- data[split == i, ]
-    if (class(gfo$data) == "mids") {
-      test.df <- mice(test.df, m = gfo$m, maxit = gfo$data$iteration,
-                      predictorMatrix = gfo$data$predictorMatrix)
-    }
-      pred <- predict(fold.model, test.df)
-
-    # TODO: THIS IS THE PART THATS BINARY-based
-    fold.results.df <- data.frame(threshold = threshold.seq)
-    fold.results.df$true.negatives <- NA
-    fold.results.df$false.negatives <- NA
-    fold.results.df$true.positives <- NA
-    fold.results.df$false.positives <- NA
-
-    for (row in 1:nrow(fold.results.df)) {
-      flag <- as.numeric(pred >= fold.results.df[row, "threshold"])
-      actual <- test.df[, response]
-      fold.results.df[row, "true.negatives"] <- sum(flag == 0 & actual == 0)
-      fold.results.df[row, "false.negatives"] <- sum(flag == 0 & actual == 1)
-      fold.results.df[row, "true.positives"] <- sum(flag == 1 & actual == 1)
-      fold.results.df[row, "false.positives"] <- sum(flag == 1 & actual == 0)
-    }
-    # Binary case accuracy, precision, recall
-    fold.results.df <- within(fold.results.df, {
-      accuracy <- (true.positives + true.negatives) /
-                  (true.negatives + false.negatives + true.positives +
-                   false.positives)
-      precision <- true.positives / (true.positives + false.positives)
-      recall <- true.positives / (true.positives + false.negatives)
-    })
-    accuracy.list[[i]] <- matrix(fold.results.df$accuracy, ncol = 1)
-    recall.list[[i]] <- matrix(fold.results.df$recall, ncol = 1)
-    precision.list[[i]] <- matrix(ifelse(is.nan(fold.results.df$precision), 0,
-                                         fold.results.df$precision), ncol = 1)
-    complete.cases <- complete.cases + !is.nan(fold.results.df$precision)
-    starter.pack <<- list(split          = split,
-                          model.list     = model.list,
-                          accuracy.list  = accuracy.list,
-                          recall.list    = recall.list,
-                          precision.list = precision.list,
-                          complete.cases = complete.cases)
-  }
-  metrics.df <- data.frame(threshold = threshold.seq)
-  metrics.df$accuracy <- Reduce("+", accuracy.list) / k.folds
-  metrics.df$precision <- Reduce("+", precision.list) / complete.cases
-  metrics.df$recall <- Reduce("+", recall.list) / k.folds
-
-  gfo.cxv <- list(gfo = gfo, metrics.df = metrics.df, cv.models = model.list,
-                  cv.split = split, k.folds = k.folds)
-  class(gfo.cxv) <- "gfo.cxv"
-  return(gfo.cxv)
-}
-
 #' GetVariableImpacts
 #'
 #' Computes model extrapolations when fixed effects are modulated
 #' 
-#' @param obj either a gfo.cxv (cross validation) or gfo object
+#' @param obj a gfo object
 #' @param lower.quantile the starting quantile of each continuous predictor
 #' @param upper.quantile the ending quantile of each continuous predictor
 #' 
 #' @return A data frame of the predicted outcomes under the modulations
 #'
-#' @details
-#'Currently works with only a mids data object and family = binomial!
 #' @examples
-#' data(testdata)
-#' mids <- ImputeData(testdata, m = 5, maxit = 5)
-#' gfo <- BackwardEliminate(y ~ x + w + z, data = mids)
-#' cv <- CrossValidate(gfo)
-#' impact <- GetVariableImpacts(cv)
-#' impact
+#' my.mids <- ImputeData(testdata, m = 5, maxit = 5)
+#' my.gfo <- BackwardEliminate(y ~ x + w + z, data = my.mids)
+#' GetVariableImpacts(my.gfo)
 #'
 #' @export
 GetVariableImpacts <- function(obj, lower.quantile = .05,
                                upper.quantile = .95) {
   impact.df <- data.frame()
-  if (class(obj) == "gfo.cxv") {
-    gfo <- obj[["gfo"]]
-    k.folds <- obj$k.folds
-  } else if (class(obj) == "gfo") {
+  if (class(obj) == "gfo") {
     gfo <- obj
     k.folds <- NA
     count <- NA
@@ -184,7 +45,7 @@ GetVariableImpacts <- function(obj, lower.quantile = .05,
   } else {
     data <- gfo$data
   }
-  # TODO: Add functionality for ns() and cut() terms
+  # TODO (baogorek): Add functionality for ns() and cut() terms
   terms <- gfo$final.fixed.terms
   function.terms <- terms[grepl("\\(", terms)]
   for (term in terms) {
@@ -267,8 +128,6 @@ GetVariableImpacts <- function(obj, lower.quantile = .05,
   return(impact.df)
 }
 
-
-
 #' GetVariableGroupImpact: Model Implied Group Impact Analysis
 #'
 #' Shows how the predicted values of a model change as a set of variables
@@ -286,11 +145,10 @@ GetVariableImpacts <- function(obj, lower.quantile = .05,
 #'                     "high" value
 #' 
 #' @examples 
-#' data(testdata)
-#' gfo <- FitModel(y ~ x + w + z, data = testdata)
-#' GetVariableGroupImpact(gfo, var.vec = c("w", "x"),
-#'                        low.val.list = list(x = -1, w = -1),
-#'                        high.val.list = list(x = 1, w = 1))
+#' my.gfo <- FitModel(y ~ x + w + z, data = testdata)
+#' group.impacts <- GetVariableGroupImpact(my.gfo,
+#'                                         low.val.list = list(x = -1, w = -1),
+#'                                         high.val.list = list(x = 1, w = 1))
 #'
 #' @export
 GetVariableGroupImpact <- function(obj, low.val.list, high.val.list) {
