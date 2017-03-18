@@ -55,7 +55,6 @@ ImputeData <- function(data, m = 10, maxit = 15, droplist = NULL) {
   if (length(intersect(names(data), droplist)) < length(droplist)) {
     stop("Droplist variables not found in data set")
   }
-  require(mice)
   predictorMatrix <- (1 - diag(1, ncol(data)))
   for (term in droplist) {
     drop.index <- which(names(data) == term)

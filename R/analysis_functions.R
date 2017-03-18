@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#' @importFrom lme4 glmer lmer ranef fixef vcov.merMod formatVC
-#' @importFrom nlme lme
+#' @importFrom lme4 glmer lmer ranef fixef vcov.merMod formatVC VarCorr
+#' @importFrom nlme lme corAR1 getVarCov
 #' @importFrom splines ns
 #' @importFrom graphics arrows barplot mtext par text
 #' @importFrom stats as.formula coef contrasts family formula gaussian glm
-#' @importFrom stats logLik pchisq pf predict quantile sd terms var vcov
-
+#' @importFrom stats logLik pchisq pf predict quantile sd terms var vcov coef
 NULL
 
 coef2 <- function(object, ...) UseMethod('coef2', object)
@@ -200,10 +199,8 @@ summary.gfo <- function(obj) {
                                Variance = numeric(2))
         model.struct <- summary(obj$fitted[[i]])$modelStruct
         cor.struct <- summary(model.struct)$corStruct
-        # Changing class to corAR1
-        #class(cor.struct) <- attr(cor.struct, "oClass")
-        #print(as.numeric(coef(cor.struct, unconstrained = FALSE)))
-        ar.parm <- coef.corAR1(cor.struct, unconstrained = FALSE)
+        # This used to be coef.corAR1 explicitly, by it is not exported by nlme
+        ar.parm <- coef(cor.struct, unconstrained = FALSE)
         ar.vec <- c(ar.vec, ar.parm)
       } else {
         # var.corr contains names that do not change with i

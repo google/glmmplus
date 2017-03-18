@@ -7,7 +7,7 @@
 CreateFormula(response, predictors, random.terms = character(0))
 }
 \description{
-@param reponse the response variable's name
+@param response the response variable's name
  @param predictors a character vector of predictor names
  @param random.terms a character vector of random terms as they are presented in
                terms(formula)

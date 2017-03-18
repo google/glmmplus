@@ -25,13 +25,13 @@ Selection for Generalized (Mixed) Linear Models with Missing Data
 }
 \examples{
 # A sample data set with missing values
-head(missing)
+head(testdata)
 
 # creating a Muliply Imputed Data Set (mids) object
-my.mids <- ImputeData(missing, m = 5, maxit = 5)
+my.mids <- ImputeData(testdata, m = 5, maxit = 5)
 
 # a single imputation
-complete1 <- complete(mids)
+complete1 <- complete(my.mids)
 
 # Backwards elimination for fixed effect models
 ForwardSelect(y ~ x + w + z, data = complete1)
