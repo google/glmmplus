@@ -6,10 +6,15 @@
 \usage{
 CreateFormula(response, predictors, random.terms = character(0))
 }
+\arguments{
+\item{response}{the response variable's name}
+
+\item{predictors}{a character vector of predictor names}
+
+\item{random.terms}{a character vector of random terms as they are presented in
+terms(formula)}
+}
 \description{
-@param response the response variable's name
- @param predictors a character vector of predictor names
- @param random.terms a character vector of random terms as they are presented in
-               terms(formula)
+Formula creation from string arguments
 }
 

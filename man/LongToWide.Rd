@@ -5,7 +5,7 @@
 \alias{LongToWide.data.frame}
 \title{LongToWide: Convert nested long structures to wide multivariate structures}
 \usage{
-LongToWide(object, ...)
+LongToWide(data, id.name, period.name, time.varying.vars, sep)
 
 \method{LongToWide}{data.frame}(data, id.name, period.name, time.varying.vars,
   sep = ".")

@@ -133,10 +133,8 @@ GetVariableImpacts <- function(obj, lower.quantile = .05,
 #' Shows how the predicted values of a model change as a set of variables
 #' simultaneously change in value.
 #' 
-#' @param gfo.obj A gfo object created by FitModel, BackwardEliminate, or
+#' @param obj A gfo object created by FitModel, BackwardEliminate, or
 #'                Forward Select
-#' 
-#' @param var.vec A character vector of variable names
 #' 
 #' @param low.val.list A list mapping each variable name (from var.vec) to its
 #'                    "low" value

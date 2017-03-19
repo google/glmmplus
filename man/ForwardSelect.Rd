@@ -19,6 +19,10 @@ the procedure terminates.}
 
 \item{family}{Any family accepted by glm or lmer. Do not use quotation
 marks.}
+
+\item{ts.model}{a time series residual structure from the lme package}
+
+\item{verbose}{Toggles additional output when set to TRUE}
 }
 \description{
 Selection for Generalized (Mixed) Linear Models with Missing Data

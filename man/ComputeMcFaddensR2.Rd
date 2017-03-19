@@ -10,8 +10,6 @@ ComputeMcFaddensR2(fit, null.model)
 \item{fit}{a full model object, must support the LogLik function}
 
 \item{null.model}{the reduced model object, must support the LogLike function}
-
-\item{n}{the sample size}
 }
 \value{
 the scalar Cox & Snell R-squared

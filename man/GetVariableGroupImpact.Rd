@@ -7,16 +7,14 @@
 GetVariableGroupImpact(obj, low.val.list, high.val.list)
 }
 \arguments{
+\item{obj}{A gfo object created by FitModel, BackwardEliminate, or
+Forward Select}
+
 \item{low.val.list}{A list mapping each variable name (from var.vec) to its
 "low" value}
 
 \item{high.val.list}{A list mapping each variable name (from var.vec) to its
 "high" value}
-
-\item{gfo.obj}{A gfo object created by FitModel, BackwardEliminate, or
-Forward Select}
-
-\item{var.vec}{A character vector of variable names}
 }
 \description{
 Shows how the predicted values of a model change as a set of variables

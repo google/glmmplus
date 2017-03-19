@@ -20,6 +20,70 @@
 #' @importFrom stats logLik pchisq pf predict quantile sd terms var vcov coef
 NULL
 
+#' testdata: a small data set with missing values
+#'
+#' Contains numeric variables x (25% missing), y (25% missing), and w
+#' (0% missing) as well as two factor variables (factor.1, factor.2) for use
+#' with random effects modeling. Finally, y and y.binary are suggested for use
+#' as example continuous and binary response variables, respectively.
+#'
+#' @name testdata 
+#' @usage data(testdata)
+#' @docType data
+#' @keywords datasets
+#' @format A data frame with 500 rows and 7 variables
+NULL
+
+#' Sample from the National Longitudinal Survey of Youth - NLSY97 (1997-2013)
+#'
+#' A dataset compiled using the NLS Investigator online tool
+#' (www.nlsinfo.org/investigator) along with the NLSdata package
+#' (www.github.com/google/NLSdata) with the goal of investigating the link
+#' to a math or computer science career to attitudes and demographic variables.
+#'
+#' \itemize{
+#'   \item PUBID.1997. Subject level identifier in the NLSY97 survey
+#'   \item age. Age of the respondent at time of answering questions
+#'   \item math.cs. Whether current job is classified as math or CS
+#'   \item gender. Self identified gender of the subject
+#'   \item race.  Self identified race of the subject
+#'   \item poverty.ratio. Ratio of household income to poverty level in the previous year 
+#'   \item hs.prog.1997. Had subject taken high school programming class by the 1997 interview?
+#'   \item teachers.good. 1-5, extent to which subject thought his or her teachers were good
+#'   \item teachers.interested. 1-5, extent to which subject thought his or her teachers were interested
+#'   \item enriching.environment. 0-3, higher scores indicate a more enriching environment 
+#'   \item{prog.course.since.dli.1998.}{ When asked in 1998, did subject take
+#'                                     programming course since data of last
+#'                                     interview?}
+#'   \item{prog.course.since.dli.2001.}{ When asked in 2001, did subject take
+#'                                     programming course since data of last
+#'                                     interview?}
+#'   \item pr.five.yr.marriage. Subjects estimation of marriage probability in 5 years.
+#'   \item organized. 1-5, self-rated, higher scores mean more organized
+#'   \item conscientious. 1-5, self-rated, higher scores mean more conscientious 
+#'   \item dependable. 1-5, self-rated, higher scores mean more dependable
+#'   \item thorough. 1-5, self-rated, higher scores mean more thorough
+#'   \item agreeable. 1-5, self-rated, higher scores mean more agreeable 
+#'   \item cooperative. 1-5, self-rated, higher scores mean more cooperative 
+#'   \item flexible. 1-5, self-rated, higher scores mean more flexible
+#'   \item trustful. 1-5, self-rated, higher scores mean more trustful
+#' }
+#'
+#' @docType data
+#' @keywords datasets
+#' @name nls.97 
+#' @usage data(nls.97)
+#' @format A data frame with 53940 rows and 10 variables
+NULL
+
+#' An alternative generic to coef
+#'
+#' This was created for internal purposes, to create a common interface between
+#' different types of modeling output
+#'
+#' @param object a gfo object
+#' @param ... additional arguments
+#'
 #' @export
 coef2 <- function(object, ...) UseMethod('coef2', object)
 
@@ -39,6 +103,14 @@ coef2.lme <- function(object, ...) {
   return(coef2.merMod(object))
 }
 
+#' An alternative generic to vcov 
+#'
+#' This was created for internal purposes, to create a common interface between
+#' different types of modeling output
+#'
+#' @param object a gfo object
+#' @param ... additional arguments
+#'
 #' @export
 vcov2 <- function(object, ...) UseMethod('vcov2', object)
 
@@ -51,11 +123,6 @@ vcov2.lme <- function(object, ...) vcov(object)
 #' @export
 vcov2.merMod <- function(object, ...) {
   # Overwriting mer variance function to match glm's format
-  #
-  # Args:
-  #  obj: a mer object
-  #
-  #  Returns: The variance matrix as a native matrix object
   rr <- vcov.merMod(object)
   var.mat <- try(as.matrix(rr))
   if (class(var.mat) == "matrix") {  # i.e., no errors
@@ -65,8 +132,16 @@ vcov2.merMod <- function(object, ...) {
   return(var.mat)
 }
 
+#' A generic version of mice's complete function
+#'
+#' This allows applying complete() to a mids object or a data.frame
+#' 
+#' @param df a data.frame or mids object
+#' @param i index for the multiply imputed data set within a mids object. Does
+#'        nothing if the first argument is a data.frame
+#'
 #' @export
-complete <- function(df, ...) {
+complete <- function(df, i) {
   UseMethod('complete', df)
 }
 
@@ -79,12 +154,15 @@ complete.mids <- function(df, i = 1) {
 }
 
 #' @export
-coef.gfo <- function(obj) obj$qbar
+coef.gfo <- function(object, ...) {
+  object$qbar
+}
 
 #' Standardized Coefficients 
 #'
 #' Computes the standardized coefficients from a gfo object
 #'
+#' @param obj a gfo object
 #' @export
 scoef <- function(obj) {
   #  Returns: numerical vector of standardized coefficients
@@ -100,49 +178,54 @@ scoef <- function(obj) {
 }
 
 #' @export
-vcov.gfo <- function(obj) {
-  with(obj, ubar + (1 + 1 / m) * b)
+vcov.gfo <- function(object, ...) {
+  with(object, ubar + (1 + 1 / m) * b)
 }
 
 #' predict.gfo
 #' 
 #' Prediction function for a generalized fitted object from glmmplus package
 #'
-#' @param obj A gfo object
+#' @param object A gfo object
 #' @param newdata either a data.frame or a mids (multiply imputed data set) object
+#' @param ... Other arguments to print
 #' 
 #' @return numerical vector of fitted response values
 #'
 #' @export
-predict.gfo <- function(obj, newdata) {
+predict.gfo <- function(object, newdata, ...) {
   outer.pred.list <- list()
   test.m <- 1
   if (class(newdata) == "mids") test.m <- newdata$m
   for (i in 1:test.m) {
     inner.pred.list <- list()
-    for (j in 1:obj$m) {
-      model.j <- obj$fitted.list[[j]]
+    for (j in 1:object$m) {
+      model.j <- object$fitted.list[[j]]
       inner.pred.list[[j]] <- as.matrix(predict(model.j, complete(newdata, i),
                                                 type = "response"))
     }
-    outer.pred.list[[i]] <- Reduce("+", inner.pred.list) / obj$m
+    outer.pred.list[[i]] <- Reduce("+", inner.pred.list) / object$m
   }
   pred <- Reduce("+", outer.pred.list) / test.m
   return(pred)
 }
 
 #' @export
-print.gfo <- function(obj) {
+print.gfo <- function(x, ...) {
   cat("Generalized Fitted Object 'gfo'\n\n")
-  display.formula <- paste(deparse(obj$formula), collapse = " ")
+  display.formula <- paste(deparse(x$formula), collapse = " ")
   display.formula <- gsub("\\s+", " ", display.formula)
   cat("R Formula Syntax:", display.formula, "\n")
-  if (class(obj$data) == "mids") {
+  if (class(x$data) == "mids") {
     cat("\nNote: Multiple Imputation of missing values performed\n")
     cat("P-values adjusted according to Rubin's Rules\n\n")
   }
 }
 
+#' INCOMPLETE - function to plot FSR in fast method
+#' 
+#' @param gfo a gfo object
+#'
 #' @export
 plotFSR <- function(gfo) {
   term <- c()
@@ -172,53 +255,58 @@ plotFSR <- function(gfo) {
 }
 
 #' @export
-summary.gfo <- function(obj) {
+summary.gfo <- function(object, ...) {
   # Summary function for a generalized fitted object (gfo)
   # Args:
-  #  obj: a gfo object
-  print(obj)
-  response <- all.vars(obj$formula)[1]
+  #  object: a gfo object
+  print(object)
+  response <- all.vars(object$formula)[1]
   summary.df <- data.frame("Intercept", NA,
-                           round(coef(obj)["(Intercept)"], 3), NA)
+                           round(coef(object)["(Intercept)"], 3), NA)
   names(summary.df) <- c("Term", "Wald p-value", "Unstandardized coefs",
                          "Standarized coefs")
-  if (identical(names(coef(obj)), "(Intercept)")) return("Intercept only model")
-  for (term in names(obj$p.values)) {
-    test.coefs <- obj$term.coef.map[[term]]
+  if (identical(names(coef(object)), "(Intercept)")) {
+    return("Intercept only model")
+  }
+
+  for (term in names(object$p.values)) {
+    test.coefs <- object$term.coef.map[[term]]
     p <- length(test.coefs)
-    unstd.coefs <- round(coef(obj)[test.coefs], 3)
-    std.coefs <- round(scoef(obj)[test.coefs], 3)
-    pretty.p.val <- c(sprintf("%.4f", obj$p.values[term]), rep('pval above', p - 1))
-    update <- data.frame(obj$term.coef.map[[term]], pretty.p.val, unstd.coefs,
-                         std.coefs)
+    unstd.coefs <- round(coef(object)[test.coefs], 3)
+    std.coefs <- round(scoef(object)[test.coefs], 3)
+    pretty.p.val <- c(sprintf("%.4f", object$p.values[term]),
+                      rep('pval above', p - 1))
+    update <- data.frame(object$term.coef.map[[term]], pretty.p.val,
+                         unstd.coefs, std.coefs)
     names(update) <- names(summary.df)
     summary.df <- rbind(summary.df, update)
   }
-  if (obj$family()$family == "binomial") {
+
+  if (object$family()$family == "binomial") {
     summary.df$odds.ratio <- round(exp(summary.df[, "Unstandardized coefs"]), 3)
   }
-  if (length(obj$random.terms) > 0) {
+  if (length(object$random.terms) > 0) {
     var.comps <- list()
     ar.vec <- c()
     nlme.flag <- FALSE
-    for (i in 1:obj$m) {
-      if (class(obj$fitted[[i]]) == "lme") {
+    for (i in 1:object$m) {
+      if (class(object$fitted[[i]]) == "lme") {
         nlme.flag <- TRUE
-        var.comps[[i]] <- c(getVarCov(obj$fitted.list[[i]]),
-                            obj$fitted.list[[i]]$sigma^2)
-        # TODO un-hard code subject
+        var.comps[[i]] <- c(getVarCov(object$fitted.list[[i]]),
+                            object$fitted.list[[i]]$sigma^2)
+        #TODO (baogorek): Is something hard coded that shouldn't be?
         var.corr <- data.frame(Groups = c("Subject",  "Residual"),
                                Name = c("(Intercept)", ""),
                                Variance = numeric(2))
-        model.struct <- summary(obj$fitted[[i]])$modelStruct
+        model.struct <- summary(object$fitted[[i]])$modelStruct
         cor.struct <- summary(model.struct)$corStruct
-        # This used to be coef.corAR1 explicitly, by it is not exported by nlme
+        #NOTE: This used to be coef.corAR1 explicitly. Not sure if it is tested
         ar.parm <- coef(cor.struct, unconstrained = FALSE)
         ar.vec <- c(ar.vec, ar.parm)
       } else {
         # var.corr contains names that do not change with i
-        var.corr <- formatVC(VarCorr(obj$fitted.list[[i]]))
-        var.comps[[i]] <- (as.numeric(var.corr[, "Std.Dev."]))^2
+        var.corr <- formatVC(VarCorr(object$fitted.list[[i]]))
+        var.comps[[i]] <- (as.numeric(var.corr[, "Std.Dev."])) ^ 2
       }
     }
     mean.vc <- Reduce("+", var.comps) / length(var.comps)
@@ -235,14 +323,16 @@ summary.gfo <- function(obj) {
   print(summary.df)
   cat("\n ### Fit Statistics ###\n\n")
   # A batteries-included philosphy on output
-  if (obj$family()$family == "gaussian" && length(obj$random.terms) == 0) {
+  if (object$family()$family == "gaussian" &&
+      length(object$random.terms) == 0) {
     cat("Well-defined R-squared is available\n")
-    cat("R-squared:", round(obj$mcfaddens.r2, 4), "\n")
-  } else if (obj$family()$family == "binomial") {
+    cat("R-squared:", round(object$mcfaddens.r2, 4), "\n")
+  } else if (object$family()$family == "binomial") {
     cat("----Binomial response varible.----\n")
     cat("No well-defined R-squared is available.\n\n")
-    cat("McFadden's generalized R-squared:", round(obj$mcfaddens.r2, 4), "\n\n")
-    cat("Cox & Snell pseudo R-squared: ", round(obj$coxsnell.r2, 4), "\n")
+    cat("McFadden's generalized R-squared:", round(object$mcfaddens.r2, 4),
+        "\n\n")
+    cat("Cox & Snell pseudo R-squared: ", round(object$coxsnell.r2, 4), "\n")
   } else {
     cat("No fit statistics have been selected for this model\n")
   }
@@ -264,7 +354,6 @@ ComputeCoxSnellR2 <- function(fit, null.model, n) {
 #' 
 #' @param fit a full model object, must support the LogLik function
 #' @param null.model the reduced model object, must support the LogLike function
-#' @param n the sample size
 #' 
 #' @return the scalar Cox & Snell R-squared
 #' @export
@@ -288,6 +377,7 @@ CollectModelQuantities <- function(fit, data, null.model) {
 #'                lme4 package's specification.
 #' @param data Either a mids object from the mice package, or a data frame.
 #' @param family Any family accepted by glm or lmer. Do not use quotation marks.
+#' @param ts.model a time series residual structure from the lme package
 #' 
 #' @examples
 #' # A sample data set with testdata values
@@ -360,10 +450,14 @@ GetWaldPValue <- function(fitted, drop) {
 #' @param family one of the family functions (e.g., binomial), not in quotations
 #' @param null.model the reduced model to be used in p-value computations
 #' @param random.terms the vector of random terms from the model formula
+#' @param ts.model a time series residual structure from the lme package
 #'
 #' @return a gfo S3 object
 #' @export
-GetEstimates <- function(data, ...) UseMethod("GetEstimates", data)
+GetEstimates <- function(data, formula, family, null.model, random.terms,
+                         ts.model) {
+  UseMethod("GetEstimates", data)
+}
 
 #' @export
 GetEstimates.data.frame <- function(data, formula, family, null.model,
@@ -421,13 +515,13 @@ GetEstimates.data.frame <- function(data, formula, family, null.model,
 }
 
 #' @export
-GetEstimates.mids <- function(mids, formula, family, null.model,
+GetEstimates.mids <- function(data, formula, family, null.model,
                               random.terms = character(0), ts.model = NULL) {
-  m <- mids$m
+  m <- data$m
   if (length(random.terms) == 0) {
     analysis.list <- lapply(c(1:m),
-                              function(i){
-                                glm(formula = formula, data = complete(mids, i),
+                              function(i) {
+                                glm(formula = formula, data = complete(data, i),
                                     family = family)})
                      
   } else {
@@ -445,7 +539,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
         random.formula <- as.formula(paste0("~", random.terms[1])) 
         if (ts.model == "ar1") {
           analysis.list <- lapply(c(1:m), function(i) {
-                           return(lme(fixed.formula, data = complete(mids, i),
+                           return(lme(fixed.formula, data = complete(data, i),
                                       random = random.formula,
                                       correlation = corAR1(0.5,
                                         form = random.formula)))
@@ -458,7 +552,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
         analysis.list <- lapply(c(1:m),
                                function(i) {
                                  return(lmer(formula = formula,
-                                             data = complete(mids, i)))})
+                                             data = complete(data, i)))})
       }
     } else {
        # Handle non-Gaussian random effects models 
@@ -468,7 +562,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
         analysis.list <- lapply(c(1:m),
                                function(i){
                                  return(glmer(formula = formula,
-                                        data = complete(mids, i),
+                                        data = complete(data, i),
                                         family = family))
                                 })
      }
@@ -481,7 +575,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   for (i in 1:m) {
     current.analysis <- analysis.list[[i]]
     quantities <- try(CollectModelQuantities(current.analysis,
-                                             complete(mids, i), null.model))
+                                             complete(data, i), null.model))
     if (class(quantities) == "try-error") {
       warning("Error. Model run dropped.")
       print(analysis.list[[i]])
@@ -497,7 +591,7 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   obj <- list(ubar = NA, qbar = NA, b = NA, m = m,
               mcfaddens.r2 = NA, coxsnell.r2 = NA,
               formula = formula, family = family, fitted.list = analysis.list,
-              sd.vars = GetStandardDevs(mids$data))
+              sd.vars = GetStandardDevs(data$data))
   class(obj) = "gfo"
   if (m > 1) {
     obj[["qbar"]] <- Reduce("+", coef.list) / m

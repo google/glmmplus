@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#' INCOMPLETE - Compute Fast FSR estimate
+#'
+#' http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2748177/
+#'
+#' @param n.total.vars Number of variables eligible for model
+#' @param n.model.vars Number of variables kept in model
+#' @param alpha the traditional alpha-to-enter or alpha-to-stay
+#' @param verbose toggles additional output
+#'
+#' @return The FSR estimate of Boos, Stefanski, and Wu (2009)
 GetFastFSR <- function(n.total.vars, n.model.vars, alpha, verbose = FALSE) {
-  # Compute Fast FSR estimate from
-  # http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2748177/
-  #
-  # Args:
-  #  n.total.vars: Number of variables eligible for model
-  #  n.model.vars: Number of variables kept in model
-  #  alpha: the traditional alpha-to-enter or alpha-to-stay
-  #
-  # Returns: The FSR estimate of Boos, Stefanski, and Wu (2009)
   if (verbose) {
   cat ("Echoing Fast FSR paramters: \n n.total.vars: ", n.total.vars,
        "n.model.vars: ", n.model.vars, ", alpha: ", alpha, "\n")
@@ -36,7 +37,6 @@ GetFastFSR <- function(n.total.vars, n.model.vars, alpha, verbose = FALSE) {
 #' This is a backwards elimination procedure for generic procedures that
 #' ouput p-values
 #' 
-#' 
 #' @param formula A formula which may contain random effects according to the
 #'                lme4 package's specification.
 #' @param data    Either a mids object from the mice package, or a data frame.
@@ -44,6 +44,8 @@ GetFastFSR <- function(n.total.vars, n.model.vars, alpha, verbose = FALSE) {
 #'               remaining model terms fall below this value,
 #'               the procedure terminates.
 #' @param family Any family accepted by glm or lmer. Do not use quotation marks.
+#' @param ts.model A time series residual error structure from the lme package
+#' @param verbose Toggles additional output
 #' 
 #' @return A gfo object
 #' 
@@ -94,6 +96,8 @@ BackwardEliminate <- function(formula, data, cutoff = .05,
 #'               the procedure terminates.
 #' @param family Any family accepted by glm or lmer. Do not use quotation
 #'                 marks.
+#' @param ts.model a time series residual structure from the lme package
+#' @param verbose Toggles additional output when set to TRUE
 #'
 #' @examples
 #' # A sample data set with missing values
@@ -135,16 +139,6 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
                                    family = gaussian, ts.model, type,
                                    verbose = FALSE) {
   # Private function encaptulating the common logic of the stepwise procedures
-  #
-  # Args:
-  #  formula: a formula with optionally contains random effects
-  #  data: a data.frame or mids object
-  #  cutoff: the alpha-to-stay or alpha-to-enterparameter
-  #  family: the family functions in R
-  #  type: either "forward" or "backward"
-  #  ts.model:
-  #
-  # Returns: a gfo model object
   all.terms <- attributes(terms(formula))$term.labels
   fixed.terms <- all.terms[!grepl("\\|", all.terms)]
   random.terms <- all.terms[grepl("\\|", all.terms)]

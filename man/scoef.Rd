@@ -6,6 +6,9 @@
 \usage{
 scoef(obj)
 }
+\arguments{
+\item{obj}{a gfo object}
+}
 \description{
 Computes the standardized coefficients from a gfo object
 }

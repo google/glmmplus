@@ -150,18 +150,24 @@ GetRandomEffectVars <- function(var.vec) {
    return(trim(return.vec))
 }
 
-# Not sure if this is necessary
 RemoveRandomEffectVars <- function(var.vec) {
  # Removes random effect terms from a term vector
- #
- # Args:
- #  var.vec: a character vector of random terms
- #
- # Returns: a vector of variable names
  non.random.terms <- var.vec[!grepl("\\|", var.vec)]
  return(trim(non.random.terms))
 }
 
+#' Make a spline formula string corresponding to unambiguous spline
+#'
+#' The ns() function is convenient, but without specifiying the knots and the
+#' boundary knots, the information neccessary to reproduce the function is in
+#' the data set itself. This function creates a string that can be used in
+#' future formulas and does not depend on the original data set for
+#' reproducibility.
+#'
+#' @param var.name name of variable for use with spline equation
+#' @param data data set that will be used to construct the spline string
+#' @param interior.knots the interior knots of the spline
+#'
 #' @export
 MakeSplineStr <- function(var.name, data, interior.knots) {
   str.1 <- paste0("ns(", var.name, ", knots = c(")
@@ -173,9 +179,9 @@ MakeSplineStr <- function(var.name, data, interior.knots) {
 
 #' Formula creation from string arguments
 #'
-#'  @param response the response variable's name
-#'  @param predictors a character vector of predictor names
-#'  @param random.terms a character vector of random terms as they are presented in
+#' @param response the response variable's name
+#' @param predictors a character vector of predictor names
+#' @param random.terms a character vector of random terms as they are presented in
 #'                terms(formula)
 #'
 #' @export
@@ -210,7 +216,7 @@ CreateFormula <- function(response, predictors, random.terms = character(0)) {
 #'  
 #' @param id.name The name of the identifying variable, a character string.
 #'  
-#' @param response The common prefix for the response variable, a character
+#' @param response.base The common prefix for the response variable, a character
 #'                 string.
 #' @param time.varying.bases A character vector of name prefixes for
 #'        time-varying covariates.
@@ -241,7 +247,9 @@ CreateFormula <- function(response, predictors, random.terms = character(0)) {
 #'       http://www.jstatsoft.org/v45/i03/.
 #'
 #' @export
-WideToLong <- function(object, ...) UseMethod('WideToLong', object)
+WideToLong <- function(data, id.name, response.base, time.varying.bases, sep) {
+  UseMethod('WideToLong', data)
+}
 
 #' @rdname WideToLong 
 #' @export
@@ -316,7 +324,9 @@ WideToLong.data.frame <- function(data, id.name, response.base,
 #'       Journal of Statistical Software, 45(3), 1-67. URL
 #'       http://www.jstatsoft.org/v45/i03/.
 #' @export
-LongToWide <- function(object, ...) UseMethod('LongToWide', object)
+LongToWide <- function(data, id.name, period.name, time.varying.vars, sep) {
+  UseMethod('LongToWide', data)
+}
 
 #' @rdname LongToWide
 #' @export

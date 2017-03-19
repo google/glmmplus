@@ -4,7 +4,7 @@
 \alias{GetEstimates}
 \title{generalized fitted model (gfo) constructor}
 \usage{
-GetEstimates(data, ...)
+GetEstimates(data, formula, family, null.model, random.terms, ts.model)
 }
 \arguments{
 \item{data}{a data.frame or mids object}
@@ -16,6 +16,8 @@ GetEstimates(data, ...)
 \item{null.model}{the reduced model to be used in p-value computations}
 
 \item{random.terms}{the vector of random terms from the model formula}
+
+\item{ts.model}{a time series residual structure from the lme package}
 }
 \value{
 a gfo S3 object

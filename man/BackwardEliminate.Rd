@@ -18,6 +18,10 @@ remaining model terms fall below this value,
 the procedure terminates.}
 
 \item{family}{Any family accepted by glm or lmer. Do not use quotation marks.}
+
+\item{ts.model}{A time series residual error structure from the lme package}
+
+\item{verbose}{Toggles additional output}
 }
 \value{
 A gfo object

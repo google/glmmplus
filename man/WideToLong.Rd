@@ -6,12 +6,12 @@
 \alias{WideToLong.mids}
 \title{WideToLong: Converting from wide to long formats}
 \usage{
-WideToLong(object, ...)
+WideToLong(data, id.name, response.base, time.varying.bases, sep)
 
 \method{WideToLong}{data.frame}(data, id.name, response.base,
   time.varying.bases = NULL, sep = ".")
 
-\method{WideToLong}{mids}(wide.mids, id.name, response.base,
+\method{WideToLong}{mids}(data, id.name, response.base,
   time.varying.bases = NULL, sep = ".")
 }
 \arguments{
@@ -22,14 +22,14 @@ suffix. The suffix values will be the future period labels.}
 
 \item{id.name}{The name of the identifying variable, a character string.}
 
+\item{response.base}{The common prefix for the response variable, a character
+string.}
+
 \item{time.varying.bases}{A character vector of name prefixes for
 time-varying covariates.}
 
 \item{sep}{The character delimiter separating the variable name base from
 the period identifier.}
-
-\item{response}{The common prefix for the response variable, a character
-string.}
 }
 \description{
 In longitudinal or other multiple response studies, data presented in a long

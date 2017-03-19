@@ -13,6 +13,8 @@ lme4 package's specification.}
 \item{data}{Either a mids object from the mice package, or a data frame.}
 
 \item{family}{Any family accepted by glm or lmer. Do not use quotation marks.}
+
+\item{ts.model}{a time series residual structure from the lme package}
 }
 \description{
 Creates a generalized fitted object.

@@ -4,12 +4,14 @@
 \alias{predict.gfo}
 \title{predict.gfo}
 \usage{
-\method{predict}{gfo}(obj, newdata)
+\method{predict}{gfo}(object, newdata, ...)
 }
 \arguments{
-\item{obj}{A gfo object}
+\item{object}{A gfo object}
 
 \item{newdata}{either a data.frame or a mids (multiply imputed data set) object}
+
+\item{...}{Other arguments to print}
 }
 \value{
 numerical vector of fitted response values
