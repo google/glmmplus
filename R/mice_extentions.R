@@ -16,6 +16,17 @@
 #' @export
 mice::mice
 
+#' @importFrom mice mice.impute.pmm
+#' @export
+mice::mice.impute.pmm
+
+#' @importFrom mice pool
+#' @export
+mice::pool
+
+#' @importFrom mice pool.compare
+#' @export
+mice::pool.compare
 
 #' ImputeData - the mice function with a droplist
 #'

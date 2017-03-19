@@ -90,7 +90,6 @@ vcov.gfo <- function(obj) {
   with(obj, ubar + (1 + 1 / m) * b)
 }
 
-
 #' predict.gfo
 #' 
 #' Prediction function for a generalized fitted object from glmmplus package
@@ -221,7 +220,7 @@ summary.gfo <- function(obj) {
   cat("\n### Type II analysis of fitted terms ###\n\n")
   print(summary.df)
   cat("\n ### Fit Statistics ###\n\n")
-  # Idea: A batteries-included philosphy on output.
+  # A batteries-included philosphy on output
   if (obj$family()$family == "gaussian" && length(obj$random.terms) == 0) {
     cat("Well-defined R-squared is available\n")
     cat("R-squared:", round(obj$mcfaddens.r2, 4), "\n")
@@ -235,32 +234,31 @@ summary.gfo <- function(obj) {
   }
 }
 
+#' Computes the Cox & Snell R-squared
+#' 
+#' @param fit a full model object, must support the LogLik function
+#' @param null.model the reduced model object, must support the LogLike function
+#' @param n the sample size
+#' 
+#' @return  the scalar Cox & Snell R-squared
+#' @export
 ComputeCoxSnellR2 <- function(fit, null.model, n) {
-  # Computes the Cox & Snell R-squared
-  #
-  # Args:
-  #  fit: a full model object, must support the LogLik function
-  #  null.model: the reduced model object, must support the LogLike function
-  #  n: the sample size
-  #
-  # Returns: the scalar Cox & Snell R-squared
   return(1 - (exp(logLik(null.model) - logLik(fit)))^(2 / n))
 }
 
+#' Computes the Cox & Snell R-squared
+#' 
+#' @param fit a full model object, must support the LogLik function
+#' @param null.model the reduced model object, must support the LogLike function
+#' @param n the sample size
+#' 
+#' @return the scalar Cox & Snell R-squared
+#' @export
 ComputeMcFaddensR2 <- function(fit, null.model) {
-  # Computes the Cox & Snell R-squared
-  #
-  # Args:
-  #  fit: a full model object, must support the LogLik function
-  #  null.model: the reduced model object, must support the LogLike function
-  #  n: the sample size
-  #
-  # Returns: the scalar Cox & Snell R-squared
   return(1 - logLik(fit) / logLik(null.model))
 }
 
 CollectModelQuantities <- function(fit, data, null.model) {
-  # This is simply a device to avoid typing this multiple times
   obj <- list(fit.cov = vcov2(fit), fit.coef = coef2(fit),
               mcfaddens.r2 = ComputeCoxSnellR2(fit, null.model, nrow(data)),
               coxsnell.r2 = ComputeMcFaddensR2(fit, null.model),
@@ -377,7 +375,7 @@ GetEstimates.data.frame <- function(data, formula, family, null.model,
         if (ts.model == "ar1") {
           model.fit <- lme(fixed.formula, data = data,
                            random = random.formula,
-                           cor = corAR1(0.5, form = random.formula))
+                           correlation = corAR1(0.5, form = random.formula))
         } else {
           stop("That ts.model option has not yet been implemented")
         }
@@ -443,7 +441,8 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
           analysis.list <- lapply(c(1:m), function(i) {
                            return(lme(fixed.formula, data = complete(mids, i),
                                       random = random.formula,
-                                      cor = corAR1(0.5, form = random.formula)))
+                                      correlation = corAR1(0.5,
+                                        form = random.formula)))
                                   }) 
         } else {
           stop("That ts.model option has not yet been implemented")

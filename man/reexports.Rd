@@ -3,6 +3,9 @@
 \docType{import}
 \name{reexports}
 \alias{mice}
+\alias{mice.impute.pmm}
+\alias{pool}
+\alias{pool.compare}
 \alias{reexports}
 \title{Objects exported from other packages}
 \description{
@@ -10,7 +13,7 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{mice}{\code{\link[mice]{mice}}}
+  \item{mice}{\code{\link[mice]{mice}}, \code{\link[mice]{mice.impute.pmm}}, \code{\link[mice]{pool}}, \code{\link[mice]{pool.compare}}}
 }}
 \keyword{internal}
 
