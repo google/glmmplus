@@ -20,21 +20,35 @@
 #' @importFrom stats logLik pchisq pf predict quantile sd terms var vcov coef
 NULL
 
+#' @export
 coef2 <- function(object, ...) UseMethod('coef2', object)
+
+#' @export
 coef2.glm <- function(object, ...) coef(object)
+
+#' @export
 coef2.merMod <- function(object, ...) {
   # An S3 mer function resembling meant to resemble glm's coef
   val <- fixef(object)
   class(val) <- "coef.mer"
   return(val)
 }
+
+#' @export
 coef2.lme <- function(object, ...) {
   return(coef2.merMod(object))
 }
 
+#' @export
 vcov2 <- function(object, ...) UseMethod('vcov2', object)
+
+#' @export
 vcov2.glm <- function(object, ...) vcov(object)
+
+#' @export
 vcov2.lme <- function(object, ...) vcov(object)
+
+#' @export
 vcov2.merMod <- function(object, ...) {
   # Overwriting mer variance function to match glm's format
   #
@@ -339,21 +353,22 @@ GetWaldPValue <- function(fitted, drop) {
   return(p.value)
 }
 
+#' generalized fitted model (gfo) constructor
+#'
+#' @param data a data.frame or mids object
+#' @param formula a formula that optionally contains random effects lme4 style
+#' @param family one of the family functions (e.g., binomial), not in quotations
+#' @param null.model the reduced model to be used in p-value computations
+#' @param random.terms the vector of random terms from the model formula
+#'
+#' @return a gfo S3 object
+#' @export
 GetEstimates <- function(data, ...) UseMethod("GetEstimates", data)
 
+#' @export
 GetEstimates.data.frame <- function(data, formula, family, null.model,
                                     random.terms = character(0),
                                     ts.model = NULL) {
-  # generalized fitted model (gfo) constructor for data.frame input data set
-  #
-  # Args:
-  #  data: a data.frame
-  #  formula: a formula that optionally contains random effects lme4 style
-  #  family: one of the family functions (e.g., binomial), not in quotations
-  #  null.model: the reduced model to be used in p-value computations
-  #  random.terms: the vector of random terms from the model formula
-  #
-  #  Returns: a gfo S3 object
   if (length(random.terms) == 0) {
     model.fit <- glm(formula = formula, family = family(), data = data)
     if (!is.null(ts.model)) {
@@ -405,18 +420,9 @@ GetEstimates.data.frame <- function(data, formula, family, null.model,
   return(current.model)
 }
 
+#' @export
 GetEstimates.mids <- function(mids, formula, family, null.model,
                               random.terms = character(0), ts.model = NULL) {
-  # generalized fitted model (gfo) constructor for mids (imputed data set)
-  #
-  # Args:
-  #  data: a data.frame
-  #  formula: a formula that optionally contains random effects lme4 style
-  #  family: one of the family functions (e.g., binomial), not in quotations
-  #  null.model: the reduced model to be used in p-value computations
-  #  random.terms: the vector of random terms from the model formula
-  #
-  #  Returns: a gfo S3 object
   m <- mids$m
   if (length(random.terms) == 0) {
     analysis.list <- lapply(c(1:m),
@@ -474,8 +480,8 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   l <- 0  # number of elements in the above list. Increments.
   for (i in 1:m) {
     current.analysis <- analysis.list[[i]]
-    quantities <- try(CollectModelQuantities(current.analysis, complete(mids, i),
-                                             null.model))
+    quantities <- try(CollectModelQuantities(current.analysis,
+                                             complete(mids, i), null.model))
     if (class(quantities) == "try-error") {
       warning("Error. Model run dropped.")
       print(analysis.list[[i]])
@@ -505,3 +511,4 @@ GetEstimates.mids <- function(mids, formula, family, null.model,
   }
   return(obj)
 }
+
