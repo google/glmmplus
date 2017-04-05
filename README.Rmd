@@ -1,0 +1,110 @@
+---
+title: "README"
+author: "Ben Ogorek"
+date: "April 1, 2017"
+output: md_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+glmmplus: generalized linear mixed models with multiple imputation
+=======================================================
+
+[![Build Status](https://travis-ci.org/baogorek/glmmplus.svg?branch=master)](https://travis-ci.org/glmmplus)
+
+[![Coverage Status](https://img.shields.io/codecov/c/github/baogorek/glmmplus/master.svg)](https://codecov.io/github/baogorek/glmmplus?branch=master)
+
+## Overview
+
+glmmplus was based on the notion that missing data is a fundamental part of
+nearly any analysis and that the flagship
+procedures that allow fitting of linear models and variable selection
+should include better options
+than ejecting rows for dealing with missing values. Due to the availability and
+general acceptance of multiple imputation via the mice package, glmnet provides
+an interface that takes mids (multiply imputed data sets) and data frame
+objects interchangeably as part of its interface.
+
+Though having fallen out of favor since the arrival of LASSO, sequential
+variable selection methods that are based on p-values have the advantage that
+they seemlessly work with the adjusted p-values from multiple imputation
+(Rubin's Rules). Thus, a large part of glmmplus's code is creating sequential
+variable selection routines based on p-values.
+
+This package was developed while I was employed at Google, so it follows the
+Google style guide. An older version is still up at the github repo
+google/glmmplus.
+
+## Installation
+
+An easy way to install glmmplus is via the devtools package:
+
+```{r eval = FALSE}
+devtools::install_github("baogorek/glmmplus")
+```
+
+
+## Creating multiply imputed data sets
+
+glmmplus provides a light wrapper around the mice function (from the mice)
+package that offers one main benefit: an argument called "droplist" that
+allows the user to specify variables that will not be used in the imputation
+models. (Factor variables with many levels often slow down the imputation
+process to unacceptable levels.)
+
+```{r}
+library(glmmplus)
+# A sample data set with missing values
+head(testdata)
+
+# creating a Muliply Imputed Data Set (mids) object
+my.mids <- ImputeData(testdata, m = 5, maxit = 5,
+                      droplist = c("factor.1", "factor.2"))
+
+# a single imputation
+complete.df <- complete(my.mids)
+head(complete.df)
+```
+
+The model fitting functions in glmmplus are wrap functions like base::glm,
+lme4::glmer, and nlme::lme to provide a common interface. The output
+of these functions have output of class "gfo" ("generalized fitted object").
+```{r}
+# Backwards elimination for fixed effect models
+gfo.complete <- ForwardSelect(y.binary ~ ns(x, df = 2) + w + z,
+                              family = binomial, data = complete.df)
+class(gfo.complete)
+coef(gfo.complete)
+```
+Note that the family argument is currently set up to take functions and not the
+usual string argment (TODO: change that). Also note that throughout the forward
+selection process, the spline terms were considered together. This is possible
+with LASSO but is typically not offered in popular implementations
+(e.g., glmnet).
+
+
+As discussed in the overview, a mids object can be used in place of a data
+frame, and all inference is done on the adjusted p-values from application of
+"Rubin's Rules."
+```{r}
+gfo.missing <- ForwardSelect(y.binary ~ ns(x, df = 2) + w + z,
+                             family = binomial, data = my.mids)
+class(gfo.missing)
+coef(gfo.missing)
+```
+Note that after the imputation, the spline term collectively fell below the
+default threshold of .05 and was not included in the final model.
+
+## Incorporating random effects
+
+Adding a random effect via lme4's syntax will automatically switch the
+model fitting procedure to glmer, and it works with mids objects as well:
+```{r}
+# Backwards elimination for mixed (fixed and random) models
+ran.eff.gfo <- ForwardSelect(y.binary ~ (1 | factor.1) + x + w + z,
+                             family = binomial, data = my.mids)
+coef(ran.eff.gfo)
+```
