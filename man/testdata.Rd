@@ -15,4 +15,3 @@ with random effects modeling. Finally, y and y.binary are suggested for use
 as example continuous and binary response variables, respectively.
 }
 \keyword{datasets}
-

@@ -21,4 +21,3 @@ The FSR estimate of Boos, Stefanski, and Wu (2009)
 \description{
 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2748177/
 }
-

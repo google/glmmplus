@@ -15,4 +15,3 @@ vcov2(object, ...)
 This was created for internal purposes, to create a common interface between
 different types of modeling output
 }
-

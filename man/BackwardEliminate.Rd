@@ -19,7 +19,8 @@ the procedure terminates.}
 
 \item{family}{Any family accepted by glm or lmer. Do not use quotation marks.}
 
-\item{ts.model}{A time series residual error structure from the lme package}
+\item{ts.model}{A time series residual error structure from the lme package,
+currently only "ar1" is implemented}
 
 \item{verbose}{Toggles additional output}
 }
@@ -57,4 +58,3 @@ Stef van Buuren, Karin Groothuis-Oudshoorn (2011).
 mice: Multivariate Imputation by Chained Equations in R.
  Journal of Statistical Software, 45(3), 1-67. URL http://www.jstatsoft.org/v45/i03/.
 }
-

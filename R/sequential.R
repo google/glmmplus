@@ -44,7 +44,8 @@ GetFastFSR <- function(n.total.vars, n.model.vars, alpha, verbose = FALSE) {
 #'               remaining model terms fall below this value,
 #'               the procedure terminates.
 #' @param family Any family accepted by glm or lmer. Do not use quotation marks.
-#' @param ts.model A time series residual error structure from the lme package
+#' @param ts.model A time series residual error structure from the lme package,
+#'                 currently only "ar1" is implemented
 #' @param verbose Toggles additional output
 #' 
 #' @return A gfo object
@@ -96,7 +97,8 @@ BackwardEliminate <- function(formula, data, cutoff = .05,
 #'               the procedure terminates.
 #' @param family Any family accepted by glm or lmer. Do not use quotation
 #'                 marks.
-#' @param ts.model a time series residual structure from the lme package
+#' @param ts.model a time series residual structure from the lme package,
+#'                 currently only "ar1" is implemented
 #' @param verbose Toggles additional output when set to TRUE
 #'
 #' @examples
@@ -266,6 +268,9 @@ ForwardSelectCore <- function(iteration, iteration.terms, p.values,
   }
   if (length(iteration.terms) == 0 || smallest.p.value > cutoff) {
      continue <- FALSE
+     model.terms <- iteration.terms
+     names(p.values) <- iteration.terms
+
      if (verbose) cat("No further terms have p-values <", cutoff, "\n")
   }
   return(list(fsr = fsr.est, model.terms = model.terms,

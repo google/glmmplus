@@ -20,4 +20,3 @@ the data set itself. This function creates a string that can be used in
 future formulas and does not depend on the original data set for
 reproducibility.
 }
-

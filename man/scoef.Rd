@@ -12,4 +12,3 @@ scoef(obj)
 \description{
 Computes the standardized coefficients from a gfo object
 }
-

@@ -19,4 +19,3 @@ numerical vector of fitted response values
 \description{
 Prediction function for a generalized fitted object from glmmplus package
 }
-

@@ -256,9 +256,6 @@ plotFSR <- function(gfo) {
 
 #' @export
 summary.gfo <- function(object, ...) {
-  # Summary function for a generalized fitted object (gfo)
-  # Args:
-  #  object: a gfo object
   print(object)
   response <- all.vars(object$formula)[1]
   summary.df <- data.frame("Intercept", NA,
@@ -285,20 +282,20 @@ summary.gfo <- function(object, ...) {
   if (object$family()$family == "binomial") {
     summary.df$odds.ratio <- round(exp(summary.df[, "Unstandardized coefs"]), 3)
   }
+  # TODO (baogorek): Find out why object$fitted and object$fitted.list are same
   if (length(object$random.terms) > 0) {
     var.comps <- list()
     ar.vec <- c()
     nlme.flag <- FALSE
     for (i in 1:object$m) {
-      if (class(object$fitted[[i]]) == "lme") {
+      if (class(object$fitted.list[[i]]) == "lme") {
         nlme.flag <- TRUE
         var.comps[[i]] <- c(getVarCov(object$fitted.list[[i]]),
                             object$fitted.list[[i]]$sigma^2)
-        #TODO (baogorek): Is something hard coded that shouldn't be?
         var.corr <- data.frame(Groups = c("Subject",  "Residual"),
                                Name = c("(Intercept)", ""),
                                Variance = numeric(2))
-        model.struct <- summary(object$fitted[[i]])$modelStruct
+        model.struct <- summary(object$fitted.list[[i]])$modelStruct
         cor.struct <- summary(model.struct)$corStruct
         #NOTE: This used to be coef.corAR1 explicitly. Not sure if it is tested
         ar.parm <- coef(cor.struct, unconstrained = FALSE)
@@ -323,9 +320,13 @@ summary.gfo <- function(object, ...) {
   print(summary.df)
   cat("\n ### Fit Statistics ###\n\n")
   # A batteries-included philosphy on output
-  if (object$family()$family == "gaussian" &&
-      length(object$random.terms) == 0) {
-    cat("Well-defined R-squared is available\n")
+  if (object$family()$family == "gaussian") {
+    if (length(object$random.terms) == 0) {
+      cat("Well-defined R-squared is available\n")
+    } else {
+      cat("Random effects present. Using McFadden's R-Square with",
+          "intercept-only null model\n")
+    }
     cat("R-squared:", round(object$mcfaddens.r2, 4), "\n")
   } else if (object$family()$family == "binomial") {
     cat("----Binomial response varible.----\n")
@@ -377,7 +378,8 @@ CollectModelQuantities <- function(fit, data, null.model) {
 #'                lme4 package's specification.
 #' @param data Either a mids object from the mice package, or a data frame.
 #' @param family Any family accepted by glm or lmer. Do not use quotation marks.
-#' @param ts.model a time series residual structure from the lme package
+#' @param ts.model a time series residual structure from the lme package,
+#'        currently only "ar1" is implemented
 #' 
 #' @examples
 #' # A sample data set with testdata values
@@ -450,7 +452,8 @@ GetWaldPValue <- function(fitted, drop) {
 #' @param family one of the family functions (e.g., binomial), not in quotations
 #' @param null.model the reduced model to be used in p-value computations
 #' @param random.terms the vector of random terms from the model formula
-#' @param ts.model a time series residual structure from the lme package
+#' @param ts.model a time series residual structure from the lme package,
+#'        currently only "ar1" is implemented
 #'
 #' @return a gfo S3 object
 #' @export
@@ -474,13 +477,12 @@ GetEstimates.data.frame <- function(data, formula, family, null.model,
         if (length(random.terms) > 1) {
           stop("Only one random term is allowed for use with ts.model")
         }
-        # TODO: fix D.R.Y. violation (sequential.R)
         all.terms <- attributes(terms(formula))$term.labels
         fixed.terms <- all.terms[!grepl("\\|", all.terms)]
         response <- all.vars(formula)[1]
         fixed.formula <- as.formula(paste0(response, "~",
                                 paste(fixed.terms, collapse = "+")))
-        random.formula <- as.formula(paste0("~", random.terms[1]))
+        random.formula <- as.formula(paste0("~ 1 |", random.terms[1]))
         if (ts.model == "ar1") {
           model.fit <- lme(fixed.formula, data = data,
                            random = random.formula,
@@ -536,7 +538,7 @@ GetEstimates.mids <- function(data, formula, family, null.model,
         response <- all.vars(formula)[1]
         fixed.formula <- as.formula(paste0(response, "~",
                                 paste(fixed.terms, collapse = "+")))
-        random.formula <- as.formula(paste0("~", random.terms[1])) 
+        random.formula <- as.formula(paste0("~ 1 |", random.terms[1])) 
         if (ts.model == "ar1") {
           analysis.list <- lapply(c(1:m), function(i) {
                            return(lme(fixed.formula, data = complete(data, i),
@@ -592,7 +594,7 @@ GetEstimates.mids <- function(data, formula, family, null.model,
               mcfaddens.r2 = NA, coxsnell.r2 = NA,
               formula = formula, family = family, fitted.list = analysis.list,
               sd.vars = GetStandardDevs(data$data))
-  class(obj) = "gfo"
+  class(obj) <- "gfo"
   if (m > 1) {
     obj[["qbar"]] <- Reduce("+", coef.list) / m
     obj[["ubar"]] <- Reduce("+", mat.list) / m

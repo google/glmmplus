@@ -27,4 +27,3 @@ group.impacts <- GetVariableGroupImpact(my.gfo,
                                         high.val.list = list(x = 1, w = 1))
 
 }
-

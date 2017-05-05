@@ -25,4 +25,3 @@ my.gfo <- BackwardEliminate(y ~ x + w + z, data = my.mids)
 GetVariableImpacts(my.gfo)
 
 }
-
