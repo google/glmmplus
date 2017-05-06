@@ -40,9 +40,6 @@ missing.df[sample(1:N, round(N / 4)), "z"] <- NA
 test.mids <- ImputeData(missing.df, m = 3, maxit = 3,
                         droplist = c("y.binary", "factor.1"))
 rm(complete.df)
-# Creating package data set
-# testdata <- missing.df
-# save(list = "testdata", file = "../data/testdata.rda", compress = TRUE)
 
 test_that("Internal functions match mice package functions", {
   # Complete case
@@ -65,7 +62,6 @@ test_that("Internal functions match mice package functions", {
   mice.p.value <- pool.compare(test.mira.full, test.mira.red)$pvalue
 
   # Our alternative gfo object
-  # Note that interally to glmmplus, GetEstimates() is generic
   glmmplus.pooled <- glmmplus:::GetEstimates.mids(test.mids, y ~ w + z + x,
                                                   gaussian, null.model)
   test.coef.names <- glmmplus:::GetCoefNames("x", complete(test.mids))
@@ -98,6 +94,7 @@ test_that("Sequential edge cases do not break glmmplus", {
   glm.null <- BackwardEliminate(y.binary ~ z, missing.df, family = binomial)
   expect_equal(length(glm.null$qbar[-1]), 0)
   rm(glm.null)
+
   # Edge Case 2 - all terms remain
   glm.complete <- BackwardEliminate(y ~ x + w, missing.df)
   expect_equal(sort(names(glm.complete$qbar[-1])), c("w", "x"))

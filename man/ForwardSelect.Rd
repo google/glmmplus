@@ -38,11 +38,11 @@ my.mids <- ImputeData(testdata, m = 5, maxit = 5)
 # a single imputation
 complete1 <- complete(my.mids)
 
-# Backwards elimination for fixed effect models
+# Forward Selection for fixed effect models
 ForwardSelect(y ~ x + w + z, data = complete1)
 ForwardSelect(y ~ x + w + z, data = my.mids)
 
-# Backwards elimination for mixed (fixed and random) models
+# Forward Selection for mixed (fixed and random) models
 ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = complete1)
 ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = my.mids)
 

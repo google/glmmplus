@@ -3,7 +3,7 @@ Date: 2017-01-22
 Title: Tools for fitting generalized linear (mixed) models
 Description: Model selection tools for generalized linear (mixed) models
     with accomidations for missing data.
-Version: 0.91
+Version: 0.9.2
 Author: Ben Ogorek <baogorek@gmail.com>,
     Caitlin Hogan <caitlinh@google.com>,
 Maintainer: Ben Ogorek <baogorek@gmail.com>

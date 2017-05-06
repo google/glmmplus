@@ -295,23 +295,21 @@ summary.gfo <- function(object, ...) {
         var.corr <- data.frame(Groups = c("Subject",  "Residual"),
                                Name = c("(Intercept)", ""),
                                Variance = numeric(2))
-        model.struct <- summary(object$fitted.list[[i]])$modelStruct
-        cor.struct <- summary(model.struct)$corStruct
-        #NOTE: This used to be coef.corAR1 explicitly. Not sure if it is tested
-        ar.parm <- coef(cor.struct, unconstrained = FALSE)
-        ar.vec <- c(ar.vec, ar.parm)
+        ar1.val <- as.numeric(object$fitted.list[[i]]$model$corStruct)
+        ar.vec <- c(ar.vec, ar1.val)
       } else {
         # var.corr contains names that do not change with i
         var.corr <- formatVC(VarCorr(object$fitted.list[[i]]))
-        var.comps[[i]] <- (as.numeric(var.corr[, "Std.Dev."])) ^ 2
+        var.comps[[i]] <- as.numeric(var.corr[, "Std.Dev."]) ^ 2
       }
     }
+
     mean.vc <- Reduce("+", var.comps) / length(var.comps)
     var.corr[, 3] <- round(sqrt(mean.vc), 2)
     cat("\n\n###  Random Effects  ###\n\n")
     print(var.corr, quote = F, digits = 2) 
     if (nlme.flag) {
-      cat("\n AR1 parameter estimate from nlme:\n")
+      cat("\nAR1 parameter estimate from lme:\n")
       cat(round(mean(ar.vec), 2), "\n")
     } 
   }
@@ -482,7 +480,7 @@ GetEstimates.data.frame <- function(data, formula, family, null.model,
         response <- all.vars(formula)[1]
         fixed.formula <- as.formula(paste0(response, "~",
                                 paste(fixed.terms, collapse = "+")))
-        random.formula <- as.formula(paste0("~ 1 |", random.terms[1]))
+        random.formula <- as.formula(paste0("~ 1", random.terms[1]))
         if (ts.model == "ar1") {
           model.fit <- lme(fixed.formula, data = data,
                            random = random.formula,
@@ -538,7 +536,7 @@ GetEstimates.mids <- function(data, formula, family, null.model,
         response <- all.vars(formula)[1]
         fixed.formula <- as.formula(paste0(response, "~",
                                 paste(fixed.terms, collapse = "+")))
-        random.formula <- as.formula(paste0("~ 1 |", random.terms[1])) 
+        random.formula <- as.formula(paste0("~ ", random.terms[1])) 
         if (ts.model == "ar1") {
           analysis.list <- lapply(c(1:m), function(i) {
                            return(lme(fixed.formula, data = complete(data, i),
