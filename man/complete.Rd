@@ -15,4 +15,3 @@ nothing if the first argument is a data.frame}
 \description{
 This allows applying complete() to a mids object or a data.frame
 }
-

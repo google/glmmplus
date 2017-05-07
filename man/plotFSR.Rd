@@ -12,4 +12,3 @@ plotFSR(gfo)
 \description{
 INCOMPLETE - function to plot FSR in fast method
 }
-

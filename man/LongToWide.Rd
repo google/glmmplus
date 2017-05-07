@@ -57,4 +57,3 @@ mice: Multivariate Imputation by Chained Equations in R.
 \seealso{
 \code{\link{WideToLong}}
 }
-

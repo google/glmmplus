@@ -5,7 +5,7 @@
 \title{Backward Elimination for Generalized (Mixed) Linear Models with Missing Data}
 \usage{
 BackwardEliminate(formula, data, cutoff = 0.05, family = gaussian,
-  ts.model = NULL, verbose = TRUE)
+  ts.model = NULL, verbose = FALSE)
 }
 \arguments{
 \item{formula}{A formula which may contain random effects according to the
@@ -19,7 +19,8 @@ the procedure terminates.}
 
 \item{family}{Any family accepted by glm or lmer. Do not use quotation marks.}
 
-\item{ts.model}{A time series residual error structure from the lme package}
+\item{ts.model}{A time series residual error structure from the lme package,
+currently only "ar1" is implemented}
 
 \item{verbose}{Toggles additional output}
 }
@@ -57,4 +58,3 @@ Stef van Buuren, Karin Groothuis-Oudshoorn (2011).
 mice: Multivariate Imputation by Chained Equations in R.
  Journal of Statistical Software, 45(3), 1-67. URL http://www.jstatsoft.org/v45/i03/.
 }
-

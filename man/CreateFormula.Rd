@@ -17,4 +17,3 @@ terms(formula)}
 \description{
 Formula creation from string arguments
 }
-

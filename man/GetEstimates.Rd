@@ -17,7 +17,8 @@ GetEstimates(data, formula, family, null.model, random.terms, ts.model)
 
 \item{random.terms}{the vector of random terms from the model formula}
 
-\item{ts.model}{a time series residual structure from the lme package}
+\item{ts.model}{a time series residual structure from the lme package,
+currently only "ar1" is implemented}
 }
 \value{
 a gfo S3 object
@@ -25,4 +26,3 @@ a gfo S3 object
 \description{
 generalized fitted model (gfo) constructor
 }
-

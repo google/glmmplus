@@ -17,4 +17,3 @@ the scalar Cox & Snell R-squared
 \description{
 Computes the Cox & Snell R-squared
 }
-

@@ -5,7 +5,7 @@
 \title{Forward Select}
 \usage{
 ForwardSelect(formula, data, cutoff = 0.05, family = gaussian,
-  ts.model = NULL, verbose = TRUE)
+  ts.model = NULL, verbose = FALSE)
 }
 \arguments{
 \item{formula}{A formula which may contain random effects according to the
@@ -20,7 +20,8 @@ the procedure terminates.}
 \item{family}{Any family accepted by glm or lmer. Do not use quotation
 marks.}
 
-\item{ts.model}{a time series residual structure from the lme package}
+\item{ts.model}{a time series residual structure from the lme package,
+currently only "ar1" is implemented}
 
 \item{verbose}{Toggles additional output when set to TRUE}
 }
@@ -37,11 +38,11 @@ my.mids <- ImputeData(testdata, m = 5, maxit = 5)
 # a single imputation
 complete1 <- complete(my.mids)
 
-# Backwards elimination for fixed effect models
+# Forward Selection for fixed effect models
 ForwardSelect(y ~ x + w + z, data = complete1)
 ForwardSelect(y ~ x + w + z, data = my.mids)
 
-# Backwards elimination for mixed (fixed and random) models
+# Forward Selection for mixed (fixed and random) models
 ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = complete1)
 ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = my.mids)
 
@@ -56,4 +57,3 @@ mice: Multivariate Imputation by Chained Equations in R.
 Journal of Statistical Software, 45(3), 1-67.
 URL http://www.jstatsoft.org/v45/i03/.
 }
-

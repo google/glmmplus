@@ -44,7 +44,8 @@ GetFastFSR <- function(n.total.vars, n.model.vars, alpha, verbose = FALSE) {
 #'               remaining model terms fall below this value,
 #'               the procedure terminates.
 #' @param family Any family accepted by glm or lmer. Do not use quotation marks.
-#' @param ts.model A time series residual error structure from the lme package
+#' @param ts.model A time series residual error structure from the lme package,
+#'                 currently only "ar1" is implemented
 #' @param verbose Toggles additional output
 #' 
 #' @return A gfo object
@@ -78,7 +79,7 @@ GetFastFSR <- function(n.total.vars, n.model.vars, alpha, verbose = FALSE) {
 #' @export
 BackwardEliminate <- function(formula, data, cutoff = .05,
                               family = gaussian, ts.model = NULL,
-                              verbose = TRUE) {
+                              verbose = FALSE) {
   final.model <- SequentiallyBuildModel(formula, data, cutoff, family,
                                         ts.model, type = "backward", verbose)
   return(final.model)
@@ -96,7 +97,8 @@ BackwardEliminate <- function(formula, data, cutoff = .05,
 #'               the procedure terminates.
 #' @param family Any family accepted by glm or lmer. Do not use quotation
 #'                 marks.
-#' @param ts.model a time series residual structure from the lme package
+#' @param ts.model a time series residual structure from the lme package,
+#'                 currently only "ar1" is implemented
 #' @param verbose Toggles additional output when set to TRUE
 #'
 #' @examples
@@ -109,11 +111,11 @@ BackwardEliminate <- function(formula, data, cutoff = .05,
 #' # a single imputation
 #' complete1 <- complete(my.mids)
 #' 
-#' # Backwards elimination for fixed effect models
+#' # Forward Selection for fixed effect models
 #' ForwardSelect(y ~ x + w + z, data = complete1)
 #' ForwardSelect(y ~ x + w + z, data = my.mids)
 #' 
-#' # Backwards elimination for mixed (fixed and random) models
+#' # Forward Selection for mixed (fixed and random) models
 #' ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = complete1)
 #' ForwardSelect(y ~ (1 | factor.1) + x + w + z, data = my.mids)
 #' 
@@ -129,9 +131,16 @@ BackwardEliminate <- function(formula, data, cutoff = .05,
 #' 
 #' @export
 ForwardSelect <- function(formula, data, cutoff = .05, family = gaussian,
-                          ts.model = NULL, verbose = TRUE) {
+                          ts.model = NULL, verbose = FALSE) {
   forward.model <- SequentiallyBuildModel(formula, data, cutoff, family,
                                           ts.model, type = "forward", verbose)
+
+  # chosing to refit model because wrong pvalue set being returned in flow
+  if (length(forward.model$final.fixed.terms) > 0) {
+    forward.model <- FitModel(forward.model$formula, data, family, ts.model)
+    forward.model$var.select.type <- "forward"
+    forward.model$var.select.cutoff <- cutoff
+  }
   return(forward.model)
 }
 
@@ -223,7 +232,9 @@ SequentiallyBuildModel <- function(formula, data, cutoff = .05,
   current.model$var.select.type <- type
   current.model$var.select.cutoff <- cutoff
   current.model$history <- history
-  print(current.model)
+  if (verbose) {
+    print(current.model)
+  }
   return(current.model)
 }
 
@@ -263,10 +274,13 @@ ForwardSelectCore <- function(iteration, iteration.terms, p.values,
     fsr.est <- GetFastFSR(n.total.vars = length(fixed.terms),
                           n.model.vars = length(model.terms),
                           alpha = smallest.p.value)
+
   }
   if (length(iteration.terms) == 0 || smallest.p.value > cutoff) {
      continue <- FALSE
-     if (verbose) cat("No further terms have p-values <", cutoff, "\n")
+         if (verbose) {
+           cat("No further terms have p-values <", cutoff, "\n")
+         }
   }
   return(list(fsr = fsr.est, model.terms = model.terms,
               iteration.terms = iteration.terms,
@@ -311,7 +325,9 @@ BackwardEliminationCore <- function(iteration, iteration.terms, p.values,
       continue <- FALSE
       model.terms <- iteration.terms
       names(p.values) <- iteration.terms
-      if (verbose) cat("All remaining terms have p-values <", cutoff, "\n")
+      if (verbose) {
+        cat("All remaining terms have p-values <", cutoff, "\n")
+      }
     }
     fsr.est <- GetFastFSR(n.total.vars = length(fixed.terms),
                           n.model.vars = length(model.terms),
