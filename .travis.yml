@@ -2,7 +2,7 @@
 
 # Header
 language: r
-sudo: true 
+sudo: false 
 cache: packages
 warnings_are_errors: false
 
@@ -25,5 +25,3 @@ services:
 
 #before_install
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y nlopt 
