@@ -5,7 +5,7 @@
 \title{Backward Elimination for Generalized (Mixed) Linear Models with Missing Data}
 \usage{
 BackwardEliminate(formula, data, cutoff = 0.05, family = gaussian,
-  ts.model = NULL, verbose = TRUE)
+  ts.model = NULL, verbose = FALSE)
 }
 \arguments{
 \item{formula}{A formula which may contain random effects according to the

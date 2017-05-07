@@ -261,7 +261,7 @@ summary.gfo <- function(object, ...) {
   summary.df <- data.frame("Intercept", NA,
                            round(coef(object)["(Intercept)"], 3), NA)
   names(summary.df) <- c("Term", "Wald p-value", "Unstandardized coefs",
-                         "Standarized coefs")
+                         "Standardized coefs")
   if (identical(names(coef(object)), "(Intercept)")) {
     return("Intercept only model")
   }
@@ -327,7 +327,7 @@ summary.gfo <- function(object, ...) {
     }
     cat("R-squared:", round(object$mcfaddens.r2, 4), "\n")
   } else if (object$family()$family == "binomial") {
-    cat("----Binomial response varible.----\n")
+    cat("----Binomial response variable.----\n")
     cat("No well-defined R-squared is available.\n\n")
     cat("McFadden's generalized R-squared:", round(object$mcfaddens.r2, 4),
         "\n\n")

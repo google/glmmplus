@@ -34,7 +34,7 @@ The glmmplus package provides sequential model selection of fixed effects
 using Rubin's adjusted p-values. Though having fallen out of favor since
 the popularization of LASSO ([Tibshirani 1996][3]), sequential
 variable selection methods based on p-values have the advantage that
-they seemlessly work with the adjusted p-values from multiple imputation,
+they seamlessly work with the adjusted p-values from multiple imputation,
 and easily allow for grouped terms and hierarchies to be considered.
 Thus, a large part of glmmplus's code is creating sequential
 variable selection routines based on p-values.
@@ -55,32 +55,43 @@ devtools::install_github("baogorek/glmmplus")
 ```
 
 
+After installing, load the glmmplus package. The package comes with the
+`testdata` data frame that is useful for demonstrating package functionality.
+```{r}
+library(glmmplus)
+# A sample data set with missing values
+head(testdata, 3)
+```
+
 ## Creating multiply imputed data sets
 
 glmmplus provides a light wrapper around the mice package's `mice` function
 that offers a single benefit: an argument called "droplist" that
 allows the user to specify variables that will not be used in the imputation
-models. This is becuase factor variables with many levels often slow down the
+models. This is because factor variables with many levels often slow down the
 imputation process to unacceptable levels.
 
-```{r}
-library(glmmplus)
-# A sample data set with missing values
-head(testdata)
-
-# creating a Muliply Imputed Data Set (mids) object
+```{r, results='hide'}
 my.mids <- ImputeData(testdata, m = 5, maxit = 5,
                       droplist = c("factor.1", "factor.2"))
+```
 
+The `complete` function has been exported from the mice package, and is used
+below to create a data frame with no missing values based on a single
+imputation.
+```{r}
 # a single imputation
-complete.df <- complete(my.mids)
-head(complete.df)
+complete.df <- complete(my.mids, 1)
+head(complete.df, 3)
 ```
 
 The model fitting functions in glmmplus wrap functions including `base::glm`,
-`lme4::glmer`, and `nlme::lme` to provide a common interface to the provided
-functionality. The output of these functions have output class called "gfo,"
+`lme4::glmer`, and `nlme::lme` to provide a common interface to generalized
+linear mixed modeling (including the cases where there is no random factor).
+The output of these functions have output class called "gfo,"
 which stands for "generalized fitted object."
+
+## Forward selection with spline terms 
 
 Below is an example of a forward selection procedure on a data set with
 no missing values. Note how the grouped term is associated with a single
@@ -92,7 +103,7 @@ summary(gfo.complete)
 ```
 
 Note that the family argument is currently set up to take functions and not the
-usual string argment ([Issue 2](https://github.com/baogorek/glmmplus/issues/2)).
+usual string argument ([Issue 2](https://github.com/baogorek/glmmplus/issues/2)).
 
 A mids object can be used in place of the data frame above,
 and all inference is done on the Rubin's Rules adjusted p-values.
@@ -115,10 +126,12 @@ ran.eff.gfo <- ForwardSelect(y.binary ~ (1 | factor.1) + x + w + z,
 summary(ran.eff.gfo)
 ```
 
+## Incorporating within-subject time series structures
+
 For a time-series model to be applied within the factor levels, add the argument
 `ts.model = "ar1"` to the glmmplus model fitting functions. The model fitting
 procedure then changes to `nlme::lme` and an autoregressive structure will be applied
-within the single factor level provided. In accordance with the `nlme::lme1`
+within the single factor level provided. In accordance with the `nlme::lme`
 function, there can only be one random effects factor when using this option.
 Additionally, this is only possible for gaussian response variables.
 time-series structures are planned ([Issue 3](https://github.com/baogorek/glmmplus/issues/3)).
@@ -139,6 +152,7 @@ ran.eff.ts.gfo.be <- BackwardEliminate(y ~ (1 | factor.1) + x + w + z,
 summary(ran.eff.ts.gfo.be)
 ```
 
+## Fitting a model without variable selection
 Or, if you'd prefer not to use sequential variable selection methods at all,
 use the `FitModel` function:
 
@@ -152,6 +166,8 @@ summary(ran.eff.ts.gfo.all)
 Notice that the example above also uses a fixed factor, where like the spline
 term in example above, only a single p-value from the grouped hypothesis test
 is presented.
+
+# References
 
 [1]: Rubin, D. B. (1987). Multiple Imputation for Nonresponse in Surveys. New York: Wiley
 

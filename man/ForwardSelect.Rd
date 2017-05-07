@@ -5,7 +5,7 @@
 \title{Forward Select}
 \usage{
 ForwardSelect(formula, data, cutoff = 0.05, family = gaussian,
-  ts.model = NULL, verbose = TRUE)
+  ts.model = NULL, verbose = FALSE)
 }
 \arguments{
 \item{formula}{A formula which may contain random effects according to the
